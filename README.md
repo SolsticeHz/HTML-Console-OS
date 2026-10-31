@@ -36,7 +36,7 @@ It is undetectable and un-seeable by all monitering systems in browsers, interne
 
 -Notifications and notification tray.
 
--Search bar to search through all games.
+-Search bar to search through all games and files on the OS.
 
 -The "Start Menu" where all games an apps are located.
 
