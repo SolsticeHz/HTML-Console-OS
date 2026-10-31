@@ -3,8 +3,8 @@
 
 // To publish an update: change CONSOLE_OS_VERSION (higher number), optionally write what changed in
 
-var CONSOLE_OS_VERSION = "2026.10.32";
-var CONSOLE_OS_UPDATE_NOTES = "";
+var CONSOLE_OS_VERSION = "2026.10.33";
+var CONSOLE_OS_UPDATE_NOTES = "Start search now finds files from File Manager. The update address is locked, and old stored updates are cleaned up.";
 var CONSOLE_OS_UPDATE_URL = "https://raw.githubusercontent.com/SolsticeHz/HTML-Console-OS/refs/heads/main/Console_OS.html";
 (function () {
   try {
@@ -22,7 +22,11 @@ var CONSOLE_OS_UPDATE_URL = "https://raw.githubusercontent.com/SolsticeHz/HTML-C
     if (!pl || typeof pl.html !== 'string' || !pl.version || pl.html.length < 20000) { localStorage.removeItem(PAYLOAD); return; }
     var c = cmp(pl.version, CONSOLE_OS_VERSION);
     if (c < 0) { localStorage.removeItem(PAYLOAD); return; }
-    if (c === 0) return;
+    if (c === 0) {
+      // This file is already that version, so the stored copy is a duplicate. Free it (but not while running inside the update's own frame).
+      if (location.href !== 'about:srcdoc') { localStorage.removeItem(PAYLOAD); localStorage.removeItem(TRIAL); }
+      return;
+    }
     var trial = JSON.parse(localStorage.getItem(TRIAL) || 'null');
     var tries = trial && trial.version === pl.version ? (trial.n || 1) : 0;
     if (tries >= 3) {
@@ -720,6 +724,7 @@ html, body {
 .search-result-info { display: flex; flex-direction: column; flex: 1; overflow: hidden; }
 .search-result-title { font-size: 13px; font-weight: 500; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .search-result-category { font-size: 11px; color: var(--text-muted2); margin-top: 2px; }
+.search-group-title { font-size: 11px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--text-muted); padding: 8px 4px 2px; }
 .search-no-results { padding: 30px; text-align: center; color: var(--text-muted); font-size: 13px; }
 
 #startMenu {
@@ -3042,10 +3047,9 @@ SettingsManager.registerTab({
         <div class="settings-card-header">Update source</div>
         <div class="settings-card-desc">The web address Console OS checks for new versions. It checks when it starts and every 20 minutes. When a newer version is found, a notification stays on screen until you update. Updating keeps all your settings, files and apps.</div>
         <div class="settings-input-group">
-          <input type="url" id="upUrl" class="settings-input" placeholder="https://…/Console_OS.html" value="${esc(U.sourceUrl())}" ${U.urlLocked() ? "readonly" : ""} />
-          ${U.urlLocked() ? "" : '<button id="upSaveUrl" class="settings-btn">Save</button>'}
+          <input type="url" id="upUrl" class="settings-input" placeholder="https://…/Console_OS.html" value="${esc(U.sourceUrl())}" readonly />
         </div>
-        <div class="settings-card-desc">${U.urlLocked() ? "This address is built into this version." : "Paste the direct link to the latest Console OS file. (To make it permanent for everyone, put it in CONSOLE_OS_UPDATE_URL at the top of the file.)"}</div>
+        <div class="settings-card-desc">${U.urlLocked() ? "This address is built into this version and can't be changed here." : "No update address is built into this version. It is set by CONSOLE_OS_UPDATE_URL at the top of the file."}</div>
       </div>
       <div class="extra-card">
         <div class="extra-card-header">Publishing an update</div>
@@ -3069,10 +3073,6 @@ SettingsManager.registerTab({
     });
     q("#upInstall")?.addEventListener("click", () => U.install());
     q("#upRemove")?.addEventListener("click", () => { if (confirm("Go back to the version built into this file?")) U.removeInstalled(); });
-    q("#upSaveUrl")?.addEventListener("click", () => {
-      const ok = U.setUrl(q("#upUrl").value);
-      status(ok ? "Source saved. Press “Check for updates”." : "That isn't a valid https:// link.");
-    });
   }
 });
 
@@ -3259,6 +3259,11 @@ const FileStore = (function() {
     return adapter.getMeta(id);
   }
   async function children(parent) { await ready(); return adapter.children(parent); }
+  // Names only (id, name, parent, type, mime). Reads the small "nodes" records, never the file contents in "data".
+  async function names() {
+    await ready();
+    return (await adapter.allMeta()).filter(n => n.type === "file").map(n => ({ id: n.id, name: n.name, parent: n.parent, mime: n.mime || "" }));
+  }
   async function path(id) {
     await ready();
     const out = [];
@@ -3381,7 +3386,7 @@ const FileStore = (function() {
     return { files, folders, bytes, persistent };
   }
 
-  return { ROOT, ready, onChange, get, children, path, createFolder, createFile, readData, writeData, rename, move, copy, remove, usage,
+  return { ROOT, ready, onChange, get, children, names, path, createFolder, createFile, readData, writeData, rename, move, copy, remove, usage,
            extOf, mimeFor, isText, isImage, iconFor, fmtSize, cleanName, isPersistent: () => persistent };
 })();
 
@@ -5249,8 +5254,33 @@ const searchFlyout = $('searchFlyout');
 const searchResultsContainer = $('searchResultsContainer');
 const searchFlyoutTitle = $('searchFlyoutTitle');
 
+let searchFileNames = null, searchFilePromise = null, searchToken = 0;
+function loadSearchFileNames() {
+  if (searchFileNames) return Promise.resolve(searchFileNames);
+  if (!searchFilePromise) {
+    searchFilePromise = FileStore.names().then(list => { searchFileNames = list; return list; })
+      .catch(() => []).finally(() => { searchFilePromise = null; });
+  }
+  return searchFilePromise;
+}
+try { FileStore.onChange(() => { searchFileNames = null; if (searchFlyout.classList.contains('open') && tbSearchInput.value.trim()) renderSearchResults(tbSearchInput.value); }); } catch (e) {}
+
+function makeSearchRow(icon, title, sub) {
+  const resEl = document.createElement('div');
+  resEl.className = 'search-result-item';
+  resEl.innerHTML = `
+    <div class="search-result-icon">${escapeHtml(icon)}</div>
+    <div class="search-result-info">
+      <div class="search-result-title">${escapeHtml(title)}</div>
+      <div class="search-result-category">${escapeHtml(sub)}</div>
+    </div>
+  `;
+  return resEl;
+}
+
 function renderSearchResults(query = "") {
   const cleanQuery = query.trim().toLowerCase();
+  const token = ++searchToken;
   searchResultsContainer.innerHTML = "";
   const pool = [...allSearchableItems, ...AppStore.installedItems(), ...Desktop.folderItems()];
 
@@ -5266,21 +5296,8 @@ function renderSearchResults(query = "") {
     );
   }
 
-  if (filtered.length === 0) {
-    searchResultsContainer.innerHTML = `<div class="search-no-results">No apps or games found matching "${escapeHtml(query)}"</div>`;
-    return;
-  }
-
   filtered.forEach(item => {
-    const resEl = document.createElement('div');
-    resEl.className = 'search-result-item';
-    resEl.innerHTML = `
-      <div class="search-result-icon">${escapeHtml(item.icon)}</div>
-      <div class="search-result-info">
-        <div class="search-result-title">${escapeHtml(item.name)}</div>
-        <div class="search-result-category">${escapeHtml(item.category)}</div>
-      </div>
-    `;
+    const resEl = makeSearchRow(item.icon, item.name, item.category);
     resEl.addEventListener('click', e => {
       if (e.button !== 0 || e.ctrlKey || recentlyContext()) return;
       launchItem(item);
@@ -5292,6 +5309,35 @@ function renderSearchResults(query = "") {
       showItemMenu(e.clientX, e.clientY, item);
     });
     searchResultsContainer.appendChild(resEl);
+  });
+
+  if (!cleanQuery) {
+    if (filtered.length === 0) searchResultsContainer.innerHTML = `<div class="search-no-results">No apps or games found</div>`;
+    return;
+  }
+
+  // Files group (names only, case-insensitive, partial match), shown under the app results
+  loadSearchFileNames().then(list => {
+    if (token !== searchToken) return;   // a newer search replaced this one
+    const files = list.filter(f => f.name.toLowerCase().includes(cleanQuery))
+      .sort((a, b) => a.name.localeCompare(b.name)).slice(0, 30);
+    if (files.length === 0) {
+      if (filtered.length === 0) searchResultsContainer.innerHTML = `<div class="search-no-results">No apps, games or files found matching "${escapeHtml(query)}"</div>`;
+      return;
+    }
+    const head = document.createElement('div');
+    head.className = 'search-group-title';
+    head.textContent = 'Files';
+    searchResultsContainer.appendChild(head);
+    files.forEach(f => {
+      const resEl = makeSearchRow(FileStore.iconFor({ type: 'file', name: f.name, mime: f.mime }), f.name, FileStore.isText({ type: 'file', name: f.name, mime: f.mime }) ? 'File · Text Editor' : 'File · File Manager');
+      resEl.addEventListener('click', e => {
+        if (e.button !== 0 || e.ctrlKey) return;
+        closeSearch();
+        FileOpen.open(f.id);
+      });
+      searchResultsContainer.appendChild(resEl);
+    });
   });
 }
 
@@ -7060,7 +7106,7 @@ if (window.__cosSwapping) throw new Error("Console OS: running an installed upda
    =================================================== */
 const ConsoleUpdater = (function() {
   const PAYLOAD = "consoleos_update_payload", TRIAL = "consoleos_update_trial", FAILED = "consoleos_update_failed";
-  const URL_KEY = "consoleos_update_url", STATE_KEY = "consoleos_update_state";
+  const URL_KEY = "consoleos_update_url", STATE_KEY = "consoleos_update_state";   // URL_KEY is only used to clear a value saved by older versions
   const EVERY = 20 * 60 * 1000, MIN_GAP = 10 * 60 * 1000;
   const cmp = window.__cosCompareVersions || function(a, b) { return String(a) === String(b) ? 0 : (String(a) > String(b) ? 1 : -1); };
 
@@ -7077,16 +7123,9 @@ const ConsoleUpdater = (function() {
 
   const okUrl = u => /^(https:\/\/|http:\/\/localhost[:\/])[^\s]+$/i.test(u);   // https only (plain http just for testing on this computer)
   const lockedUrl = () => okUrl(CONSOLE_OS_UPDATE_URL || "");
-  function sourceUrl() {
-    if (lockedUrl()) return CONSOLE_OS_UPDATE_URL;
-    try { return localStorage.getItem(URL_KEY) || ""; } catch (e) { return ""; }
-  }
-  function setUrl(u) {
-    u = String(u || "").trim();
-    if (!okUrl(u)) return false;
-    try { localStorage.setItem(URL_KEY, u); } catch (e) { return false; }
-    return true;
-  }
+  // The update address comes only from CONSOLE_OS_UPDATE_URL at the top of this file and can't be changed while running.
+  function sourceUrl() { return lockedUrl() ? CONSOLE_OS_UPDATE_URL : ""; }
+  try { localStorage.removeItem(URL_KEY); } catch (e) {}
 
   function ensureEl() {
     if (el) return el;
@@ -7148,7 +7187,6 @@ const ConsoleUpdater = (function() {
     try {
       const got = await download(url);
       state.lastChecked = Date.now();
-      try { localStorage.setItem(URL_KEY, url); } catch (e) {}
       let failed = ""; try { failed = localStorage.getItem(FAILED) || ""; } catch (e) {}
       if (cmp(got.info.version, CONSOLE_OS_VERSION) > 0 && (opts.manual || got.info.version !== failed)) {
         const wasKnown = !!(state.available && state.available.version === got.info.version);
@@ -7178,7 +7216,7 @@ const ConsoleUpdater = (function() {
       setBusy("Installing…");
       const payload = JSON.stringify({ version: got.info.version, html: got.text, installed: Date.now() });
       try { localStorage.removeItem(TRIAL); localStorage.removeItem(FAILED); } catch (e) {}
-      try { localStorage.setItem(PAYLOAD, payload); }
+      try { localStorage.setItem(PAYLOAD, payload); }   // same key every time, so a new update replaces the old one (only the latest is kept)
       catch (e) {
         try { localStorage.removeItem(PAYLOAD); localStorage.setItem(PAYLOAD, payload); }
         catch (e2) { throw new Error("Not enough browser storage left. Free some space in Settings → Performance & Storage and try again."); }
@@ -7210,7 +7248,7 @@ const ConsoleUpdater = (function() {
 
   loadState();
   return {
-    check, install, removeInstalled, start, setUrl, sourceUrl,
+    check, install, removeInstalled, start, sourceUrl,
     urlLocked: lockedUrl,
     available: () => state.available,
     lastChecked: () => state.lastChecked,
