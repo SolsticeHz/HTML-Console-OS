@@ -27,3 +27,5 @@ It is undetectable and un-seeable by all monitering systems in browsers, interne
 -Hovering over an minimzed app shows you a preview of it.
 -You can pin/unpin apps and add/remove apps from desktop.
 -You can rename all desktop apps.
+
+No wrap
