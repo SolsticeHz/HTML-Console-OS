@@ -9,6 +9,7 @@ It is undetectable and un-seeable by all monitering systems in browsers, interne
 # Features:
 
 -Custom Backgrounds. Choose from presets, from links or upload your own.
+
 -Dark & Light mods.
 -Custom accent colors. Choose from presets or color pick your own.
 -Differing clock formats, differing desktop icon sizes.
@@ -27,5 +28,3 @@ It is undetectable and un-seeable by all monitering systems in browsers, interne
 -Hovering over an minimzed app shows you a preview of it.
 -You can pin/unpin apps and add/remove apps from desktop.
 -You can rename all desktop apps.
-
-No wrap
