@@ -1,16 +1,11 @@
 <!DOCTYPE html><html lang="en" data-theme="dark"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/><title>New Tab</title>
 <script>
-/* ===================================================
-   Console OS - version info + remote-update bootstrap
-   To publish an update: change CONSOLE_OS_VERSION (higher number), optionally write what changed in
-   CONSOLE_OS_UPDATE_NOTES, then upload the file to CONSOLE_OS_UPDATE_URL (replacing the old copy).
-   Everyone who has an older copy is notified and can install it with one click.
-   Keep CONSOLE_OS_UPDATE_URL filled in on every release so the chain of updates never breaks.
-   =================================================== */
+
+// To publish an update: change CONSOLE_OS_VERSION (higher number), optionally write what changed in
+
 var CONSOLE_OS_VERSION = "2026.10.32";
-var CONSOLE_OS_UPDATE_NOTES = "Added Subway Surfers";
-var CONSOLE_OS_UPDATE_URL = "https://raw.githubusercontent.com/SolsticeHz/HTML-Console-OS/refs/heads/main/Console_OS.html";   // direct https link to the latest Console_OS .html file (must allow cross-origin reads, e.g. raw.githubusercontent.com)
-(function () {
+var CONSOLE_OS_UPDATE_NOTES = "";
+var CONSOLE_OS_UPDATE_URL = "https://raw.githubusercontent.com/SolsticeHz/HTML-Console-OS/refs/heads/main/Console_OS.html";
   try {
     var PAYLOAD = 'consoleos_update_payload', TRIAL = 'consoleos_update_trial', FAILED = 'consoleos_update_failed';
     function cmp(a, b) {
@@ -19,15 +14,14 @@ var CONSOLE_OS_UPDATE_URL = "https://raw.githubusercontent.com/SolsticeHz/HTML-C
       return 0;
     }
     window.__cosCompareVersions = cmp;
-    if (/[?&#]safe\b/.test(location.search + location.hash)) return;     // add #safe to the address to skip an installed update
+    if (/[?&#]safe\b/.test(location.search + location.hash)) return;
     var raw = localStorage.getItem(PAYLOAD);
     if (!raw) return;
     var pl = JSON.parse(raw);
     if (!pl || typeof pl.html !== 'string' || !pl.version || pl.html.length < 20000) { localStorage.removeItem(PAYLOAD); return; }
     var c = cmp(pl.version, CONSOLE_OS_VERSION);
-    if (c < 0) { localStorage.removeItem(PAYLOAD); return; }              // this file is already newer than the stored update
-    if (c === 0) return;                                                  // this IS the installed version
-    // If this update has failed to finish starting 3 times in a row, assume it is broken: drop it and run this file normally.
+    if (c < 0) { localStorage.removeItem(PAYLOAD); return; }
+    if (c === 0) return;
     var trial = JSON.parse(localStorage.getItem(TRIAL) || 'null');
     var tries = trial && trial.version === pl.version ? (trial.n || 1) : 0;
     if (tries >= 3) {
@@ -266,7 +260,7 @@ html, body {
   height: calc(100vh - var(--taskbar-height)) !important;
   border-radius: 0;
 }
-.win11-window.maximized, .app-window.maximized { max-height: none !important; }   /* app windows cap their height; maximized must ignore that cap or a sliver shows at the bottom */
+.win11-window.maximized, .app-window.maximized { max-height: none !important; }
 .win11-window.maximized .win-titlebar { cursor: default; }
 .win11-window.maximized .win-body { flex: 1; min-height: 0; }
 .win11-window.maximized #vidContain { height: 100%; flex: 1; min-height: 0; }
@@ -906,15 +900,11 @@ fullscreen-portal {
 .gl-text { font-size: 18px; font-weight: 600; text-align: center; padding: 0 20px; text-shadow: 0 0 5px #a86fff, 0 0 10px #9b59b6; }
 @keyframes glSpin { to { transform: rotate(360deg); } }
 
-/* ===================================================
-   Appstore + app windows (generic app window, Appstore UI, built-in apps)
-   =================================================== */
 .app-window { max-height: calc(100vh - var(--taskbar-height) - 8px); }
 .app-body { padding: 0; align-items: stretch; flex: 1; min-height: 0; overflow: hidden; background: var(--surface-1); }
 .app-body input, .app-body textarea { user-select: text; }
 .app-error { padding: 20px; color: var(--text-muted); font-size: 13px; }
 
-/* Appstore */
 .as-root { display: flex; flex-direction: column; height: 100%; min-height: 0; }
 .as-top { display: flex; gap: 10px; align-items: center; justify-content: space-between; flex-wrap: wrap; padding: 10px 16px; border-bottom: 1px solid var(--line); background: var(--surface-3); }
 .as-tabs { display: flex; gap: 4px; }
@@ -946,7 +936,6 @@ fullscreen-portal {
 .as-msg.err { color: #ff6b6b; }
 @media (max-width: 640px) { .as-form { grid-template-columns: 1fr; } }
 
-/* Sticky Notes */
 .sn-root { display: flex; flex-direction: column; height: 100%; min-height: 0; }
 .sn-bar { display: flex; align-items: center; gap: 12px; padding: 10px 14px; border-bottom: 1px solid var(--line); background: var(--surface-3); }
 .sn-meta { font-size: 11px; color: var(--text-muted); margin-left: auto; }
@@ -963,7 +952,6 @@ fullscreen-portal {
 .sn-text { flex: 1; min-height: 0; border: none; background: transparent; resize: none; padding: 8px; font: 13px/1.4 "Segoe UI", Tahoma, sans-serif; color: #2b2b2b; outline: none; }
 .sn-text::placeholder { color: rgba(0, 0, 0, 0.45); }
 
-/* Calculator */
 .calc-root { display: flex; flex-direction: column; height: 100%; padding: 12px; gap: 10px; outline: none; }
 .calc-screen { background: var(--input-bg); border: 1px solid var(--line); border-radius: 8px; padding: 10px 14px; text-align: right; min-height: 64px; display: flex; flex-direction: column; justify-content: flex-end; overflow: hidden; }
 .calc-expr { font-size: 12px; color: var(--text-muted); min-height: 16px; }
@@ -976,7 +964,6 @@ fullscreen-portal {
 .calc-key.eq { background: var(--accent-color); color: #000; font-weight: 700; border-color: transparent; }
 .calc-key.wide { grid-column: span 2; }
 
-/* To-Do */
 .td-root { display: flex; flex-direction: column; height: 100%; min-height: 0; }
 .td-add { display: flex; gap: 8px; padding: 12px 14px; border-bottom: 1px solid var(--line); background: var(--surface-3); }
 .td-list { flex: 1; min-height: 0; overflow-y: auto; padding: 10px 14px; display: flex; flex-direction: column; gap: 6px; }
@@ -989,7 +976,6 @@ fullscreen-portal {
 .td-foot { display: flex; align-items: center; justify-content: space-between; padding: 8px 14px; border-top: 1px solid var(--line); font-size: 12px; color: var(--text-muted); background: var(--surface-3); }
 .td-empty { text-align: center; color: var(--text-muted); font-size: 13px; padding: 30px 10px; }
 
-/* Stopwatch & Timer */
 .tm-root { display: flex; flex-direction: column; height: 100%; min-height: 0; }
 .tm-pane { flex: 1; min-height: 0; overflow-y: auto; padding: 18px; display: flex; flex-direction: column; align-items: center; gap: 14px; }
 .tm-display { font-size: 44px; font-weight: 600; font-variant-numeric: tabular-nums; color: var(--text); }
@@ -999,7 +985,6 @@ fullscreen-portal {
 .tm-lap { display: flex; justify-content: space-between; padding: 4px 8px; background: var(--card-bg); border-radius: 6px; }
 .tm-num { width: 70px; text-align: center; flex: none; }
 
-/* ---------- window resize handles + snap preview ---------- */
 .win-resize { position: absolute; z-index: 6; touch-action: none; }
 .win-resize[data-dir="n"]  { top: 0;    left: 10px; right: 10px; height: 4px; cursor: ns-resize; }
 .win-resize[data-dir="s"]  { bottom: 0; left: 10px; right: 10px; height: 5px; cursor: ns-resize; }
@@ -1010,7 +995,7 @@ fullscreen-portal {
 .win-resize[data-dir="ne"] { top: 0;    right: 0; width: 10px; height: 10px; cursor: nesw-resize; }
 .win-resize[data-dir="sw"] { bottom: 0; left: 0;  width: 10px; height: 10px; cursor: nesw-resize; }
 .win11-window.maximized .win-resize { display: none; }
-/* once a window has an explicit size (resized or snapped) its content area stretches to fill it */
+
 .win11-window.custom-size .win-body { flex: 1; min-height: 0; }
 .win11-window.custom-size #vidContain { height: 100%; flex: 1; min-height: 0; }
 .win11-window.snapped { border-radius: 0; }
@@ -1026,7 +1011,6 @@ fullscreen-portal {
   backdrop-filter: blur(3px);
 }
 
-/* ---------- quick settings flyout ---------- */
 #quickSettings {
   position: fixed;
   bottom: 58px;
@@ -1056,10 +1040,6 @@ fullscreen-portal {
 .qs-mute { background: transparent; border: none; cursor: pointer; font-size: 18px; border-radius: 6px; padding: 2px 6px; color: var(--text); }
 .qs-mute:hover { background: var(--hover-bg); }
 
-/* ===================================================
-   V7+ additions: thumbnails, notifications, icon sizes, themes,
-   dialogs, File Manager, Text Editor, chat extras
-   =================================================== */
 .app-body { position: relative; }
 .desktop-icon.renaming { background: rgba(255, 255, 255, 0.14); border-color: var(--accent-color); cursor: default; }
 .icon-rename {
@@ -1068,7 +1048,6 @@ fullscreen-portal {
   border-radius: 4px; padding: 2px 3px; outline: none; user-select: text; -webkit-user-select: text;
 }
 
-/* taskbar window thumbnails */
 #thumbCard {
   position: fixed; bottom: calc(var(--taskbar-height) + 10px); z-index: 10002; width: 244px; box-sizing: border-box;
   background: var(--flyout-bg); backdrop-filter: blur(30px); border: 1px solid var(--line-strong);
@@ -1093,7 +1072,6 @@ fullscreen-portal {
 }
 .thumb-tag { position: absolute; right: 6px; bottom: 6px; font-size: 10px; padding: 1px 6px; border-radius: 8px; background: rgba(0,0,0,0.55); color: #fff; pointer-events: none; }
 
-/* remote update banner (stays on screen until the update is installed) */
 #cosUpdate { position: fixed; right: 12px; top: 12px; z-index: 2147483001; width: 330px; max-width: calc(100vw - 24px); font-family: inherit; }
 #cosUpdate[hidden] { display: none; }
 #cosUpdate .cu-card { color: var(--text); background: var(--flyout-bg); backdrop-filter: blur(30px); border: 1px solid var(--line-strong); border-left: 3px solid var(--accent-color); border-radius: 10px; padding: 12px; box-shadow: 0 12px 36px rgba(0,0,0,0.45); display: flex; flex-direction: column; gap: 8px; animation: toastIn 0.28s cubic-bezier(0.1, 0.9, 0.2, 1); }
@@ -1112,7 +1090,6 @@ fullscreen-portal {
 #cosUpdate.mini .cu-pill { display: block; }
 #cosUpdate.mini { width: auto; display: flex; }
 
-/* notification toasts + center */
 #toastStack {
   position: fixed; right: 12px; bottom: calc(var(--taskbar-height) + 12px); width: 330px; max-width: calc(100vw - 24px);
   display: flex; flex-direction: column; gap: 8px; z-index: 2147483000; pointer-events: none;
@@ -1157,7 +1134,6 @@ fullscreen-portal {
 .nc-empty { text-align: center; color: var(--text-muted); font-size: 12px; padding: 28px 10px; line-height: 1.6; }
 .nc-foot { display: flex; align-items: center; justify-content: space-between; padding: 10px 16px; border-top: 1px solid var(--line); font-size: 13px; }
 
-/* segmented buttons (icon size) + themes */
 .seg { display: flex; gap: 8px; }
 .seg-btn {
   flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 10px 6px; border-radius: 8px; cursor: pointer;
@@ -1178,7 +1154,6 @@ fullscreen-portal {
 .settings-msg.err { color: #ff6b6b; }
 .accent-custom { width: 32px; height: 32px; padding: 0; border: 2px solid var(--line-strong); border-radius: 50%; background: none; cursor: pointer; overflow: hidden; }
 
-/* dialogs (shared by File Manager / Text Editor / desktop) */
 .dlg-overlay { position: absolute; inset: 0; z-index: 60; display: flex; align-items: center; justify-content: center; background: rgba(0, 0, 0, 0.45); backdrop-filter: blur(2px); }
 .dlg-overlay.dlg-fixed { position: fixed; z-index: 30000; }
 .dlg-box {
@@ -1199,7 +1174,6 @@ fullscreen-portal {
 .fp-row .fp-sz { color: var(--text-muted); font-size: 11px; }
 .fp-empty { color: var(--text-muted); font-size: 12px; text-align: center; padding: 26px 8px; }
 
-/* File Manager */
 .fm-root { display: flex; flex-direction: column; height: 100%; min-height: 0; font-size: 12px; color: var(--text); }
 .fm-bar { display: flex; gap: 6px; align-items: center; padding: 7px 10px; border-bottom: 1px solid var(--line); background: var(--surface-3); flex-wrap: wrap; }
 .fm-ibtn { min-width: 28px; height: 28px; border-radius: 6px; border: 1px solid transparent; background: transparent; color: var(--text); cursor: pointer; font-size: 12px; padding: 0 8px; white-space: nowrap; font-family: inherit; }
@@ -1235,7 +1209,6 @@ fullscreen-portal {
 .fm-prev-box img, .fm-prev-box video { max-width: 100%; max-height: 60vh; border-radius: 6px; }
 .fm-prev-box audio { width: 100%; }
 
-/* Text Editor */
 .te-root { display: flex; flex-direction: column; height: 100%; min-height: 0; }
 .te-bar { display: flex; gap: 4px; align-items: center; padding: 6px 8px; border-bottom: 1px solid var(--line); background: var(--surface-3); flex-wrap: wrap; }
 .te-name { margin-left: auto; font-size: 12px; color: var(--text-soft); max-width: 38%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -1248,7 +1221,6 @@ fullscreen-portal {
 .te-status { display: flex; gap: 16px; padding: 5px 12px; border-top: 1px solid var(--line); background: var(--surface-3); color: var(--text-muted); font-size: 11px; }
 .te-status .te-state { margin-left: auto; }
 
-/* chat extras */
 .chat-online { font-size: 11px; color: var(--text-soft); display: flex; align-items: center; gap: 4px; white-space: nowrap; padding: 2px 8px; border-radius: 10px; background: var(--card-bg-2); border: 1px solid var(--line); }
 .chat-filter-toggle { font-size: 11px; color: var(--text-soft); display: flex; align-items: center; gap: 4px; cursor: pointer; white-space: nowrap; }
 .chat-filter-toggle input { cursor: pointer; margin: 0; }
@@ -1435,7 +1407,7 @@ const ProfanityFilter = (function() {
   const LEET = { a: "[a@4]", b: "[b8]", e: "[e3]", g: "[g9]", i: "[i1!|]", l: "[l1|]", o: "[o0]", s: "[s$5]", t: "[t7+]" };
   const ENDING = "(?:s|es|ed|er|ers|ing|in|y|ty|ie|ies|head|face)?";
   const BASIC = ["fuck", "motherfucker", "shit", "bullshit", "bitch", "asshole", "ass", "bastard", "dick",
-                 "pussy", "cunt", "piss", "slut", "whore", "douche", "douchebag", "wanker", "twat"];
+                 "pussy", "cunt", "piss", "slut", "whore", "douche", "douchebag", "wanker", "twat", "nigga", "nigger", "nigg"];
   const lists = new Map();
   let re = null;
 
@@ -1474,24 +1446,18 @@ const ProfanityFilter = (function() {
   const CLEAR_KEY = "win11_chat_cleared_at_v1";
   const USER_KEY = "win11_chat_user_id_v1";
 
-  // Real cross-device relay: ntfy.sh is a free public publish/subscribe service.
-  // Every copy of this page publishes to, and listens on, the same topic, so
-  // messages reach every connected user on every device. The topic name acts as
-  // the "room" - change it to start a separate chat room.
   const RELAY_BASE = "https://ntfy.sh";
   const RELAY_TOPIC = "nexus-shift-global-chat-q8w3k7x2m9";
-  const HISTORY_WINDOW = "12h";   // recent messages replayed to a device when it connects
+  const HISTORY_WINDOW = "12h";
   const MAX_TEXT = 500;
   const MAX_NAME = 20;
   const MAX_MSGS = 100;
 
   const SYNC_BROADCAST = new BroadcastChannel(CHANNEL_NAME);
 
-  // "People online": every open copy announces itself every 25 s through the same relay.
-  // Presence messages are not cached by the relay (?cache=no), so old ones are never replayed.
   const PRESENCE_EVERY = 25000;
   const PRESENCE_TTL = 70000;
-  const peers = new Map();   // userId -> last time we heard from them
+  const peers = new Map();
 
   let userId = null;
   try { userId = localStorage.getItem(USER_KEY); } catch(e) {}
@@ -1506,9 +1472,8 @@ const ProfanityFilter = (function() {
   let transport = "Connecting...";
   let reconnectTimer = null;
   let retryTimer = null;
-  const pending = [];   // outgoing items that failed to publish and will be retried
+  const pending = [];
 
-  /* ---------- storage ---------- */
   function getStoredMessages() {
     try {
       const data = localStorage.getItem(STORAGE_KEY);
@@ -1528,7 +1493,6 @@ const ProfanityFilter = (function() {
     try { localStorage.setItem(CLEAR_KEY, String(ts)); } catch(e) {}
   }
 
-  // Validates anything that arrives from the network before it is stored or shown.
   function sanitize(p) {
     if (!p || typeof p !== "object") return null;
     if (typeof p.id !== "string" || !p.id || p.id.length > 64) return null;
@@ -1546,9 +1510,9 @@ const ProfanityFilter = (function() {
 
   function saveMessage(msgObj) {
     if (!msgObj) return false;
-    if (msgObj.timestamp <= getClearedAt()) return false;   // belongs to a cleared history
+    if (msgObj.timestamp <= getClearedAt()) return false;
     const msgs = getStoredMessages();
-    if (msgs.some(m => m.id === msgObj.id)) return false;   // already have it (e.g. our own echo)
+    if (msgs.some(m => m.id === msgObj.id)) return false;
     msgs.push(msgObj);
     msgs.sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
     while (msgs.length > MAX_MSGS) msgs.shift();
@@ -1556,7 +1520,6 @@ const ProfanityFilter = (function() {
     return true;
   }
 
-  /* ---------- rendering ---------- */
   function escapeHtml(str) {
     return String(str).replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[m]);
   }
@@ -1606,14 +1569,13 @@ const ProfanityFilter = (function() {
     }
   }
 
-  /* ---------- people online ---------- */
   function prunePeersNow() {
     const now = Date.now();
     peers.forEach((seen, id) => { if (now - seen > PRESENCE_TTL) peers.delete(id); });
   }
   function onlineCount() {
     prunePeersNow();
-    return 1 + peers.size;   // you + everyone else we have heard from recently
+    return 1 + peers.size;
   }
   function renderOnline() {
     const n = onlineCount();
@@ -1637,17 +1599,16 @@ const ProfanityFilter = (function() {
     if (data.leaving) { peers.delete(data.id); renderOnline(); return; }
     const t = Number(outerTime) * 1000;
     const age = isFinite(t) && t > 0 ? Math.max(0, Date.now() - t) : 0;
-    if (age > PRESENCE_TTL) return;                       // an old message, not a live one
+    if (age > PRESENCE_TTL) return;
     if (peers.size < 500) peers.set(data.id, Date.now() - age);
     renderOnline();
-    // A newcomer said hello: answer shortly, so they see everyone without waiting for the next heartbeat.
+
     if (data.hello) setTimeout(() => sendPresence(), 200 + Math.random() * 1800);
   }
 
-  /* ---------- toast for new messages while the chat is not in front ---------- */
   function notifyIncoming(m) {
     if (!m || m.userId === userId || !window.Notify) return;
-    if (Date.now() - (m.timestamp || 0) > 15000) return;   // history replay, not a new message
+    if (Date.now() - (m.timestamp || 0) > 15000) return;
     if (typeof WindowManager !== "undefined" && !WindowManager.isClosed("chatWindow") && WindowManager.isFocused("chatWindow")) return;
     const filterOn = ProfanityFilter.isOn();
     window.Notify.push({
@@ -1657,7 +1618,6 @@ const ProfanityFilter = (function() {
     });
   }
 
-  /* ---------- relay (shared across devices) ---------- */
   function relayPublish(payload) {
     return fetch(`${RELAY_BASE}/${RELAY_TOPIC}`, {
       method: "POST",
@@ -1745,12 +1705,11 @@ const ProfanityFilter = (function() {
       isConnected = false;
       transport = "Local tabs only (relay unreachable)";
       updateStatus("Reconnecting... (Local Tabs Only)", false);
-      // The browser retries on its own; if it gave up entirely, reconnect manually.
+
       if (es && es.readyState === 2) scheduleReconnect();
     };
   }
 
-  /* ---------- tabs on the same device ---------- */
   SYNC_BROADCAST.onmessage = (event) => {
     const d = event.data;
     if (!d) return;
@@ -1766,7 +1725,6 @@ const ProfanityFilter = (function() {
   });
   window.addEventListener("online", () => connectRelay());
 
-  /* ---------- sending / clearing ---------- */
   function sendMessage(text) {
     const nameInput = document.getElementById("chatUsernameInput");
     const username = ProfanityFilter.clean((nameInput ? (nameInput.value.trim() || "GuestUser") : "GuestUser").slice(0, MAX_NAME));
@@ -1786,7 +1744,6 @@ const ProfanityFilter = (function() {
     publish({ type: "win11_chat_msg", payload: msgObj });
   }
 
-  // Removes everything up to `ts` locally (and remembers it, so replayed history can't bring it back).
   function applyClear(ts) {
     ts = Math.max(ts, getClearedAt());
     setClearedAt(ts);
@@ -1868,7 +1825,7 @@ const LS_KEYS = {
   pins: "win11_taskbar_pins_v1"
 };
 const ORIGINAL_DEFAULT_BG = "linear-gradient(135deg, #101c38, #221547, #3d1547)";
-// Desktop icon size presets (width / height of one icon cell, emoji size, label size)
+
 const ICON_SIZES = {
   small:  { w: 68,  h: 80,  emoji: 30, font: 11, label: "Small" },
   medium: { w: 84,  h: 94,  emoji: 38, font: 12, label: "Medium" },
@@ -2026,8 +1983,6 @@ const SettingsManager = (function() {
     currentSettings = { ...currentSettings, ...newKeyValues };
     const ok = saveSettings();
     if (!ok) {
-      // Browser storage refused the save. Go back to what is actually saved, so the screen never shows
-      // something that would silently vanish on the next start.
       currentSettings = prev;
       applySettings();
       if (!(opts && opts.silent) && typeof Notify !== 'undefined') {
@@ -2074,10 +2029,6 @@ const SettingsManager = (function() {
   };
 })();
 
-/* ===================================================
-   Sounds - one small WebAudio engine. Every sound goes through the
-   Master Volume slider and the "Sound effects" switch.
-   =================================================== */
 const Sounds = (function() {
   let ctx = null, lastClick = 0;
 
@@ -2098,7 +2049,6 @@ const Sounds = (function() {
       return ctx;
     } catch (e) { return null; }
   }
-  // freq (Hz), start offset (s), length (s), peak loudness before the volume slider is applied, wave, optional glide target
   function tone(freq, start, dur, peak, type, glideTo) {
     const v = volume();
     if (v <= 0) return;
@@ -2132,11 +2082,10 @@ const Sounds = (function() {
     beep()   { tone(587.33, 0, 0.15, 0.2); }
   };
 
-  // Click sound for buttons, icons, menu items, tiles and switches
   document.addEventListener('click', e => {
     const t = e.target;
     if (!t || !t.closest) return;
-    if (t.closest('[data-act="close"]')) return;   // closing a window has its own sound
+    if (t.closest('[data-act="close"]')) return;
     if (t.closest('input[type="range"], input[type="text"], input[type="url"], input[type="number"], textarea, select')) return;
     if (t.closest('button, a, .desktop-icon, .game-tile, .settings-nav-item, .ctx-item, .search-result-item, .preset-bg-card, .accent-color-option, .theme-card, .seg-btn, .fm-row, .fm-place, [role="switch"], [data-sfx]')) api.click();
   }, true);
@@ -2144,13 +2093,10 @@ const Sounds = (function() {
   return api;
 })();
 
-/* ===================================================
-   Themes (wallpaper + accent colour), saved in localStorage
-   =================================================== */
 const ThemeStore = (function() {
   const KEY = "win11_themes_v1";
   const MAX_THEMES = 24;
-  const MAX_BG_CHARS = 700000;   // keeps a single saved theme from eating the whole localStorage quota
+  const MAX_BG_CHARS = 700000;
   const builtin = [
     { id: "b-default", name: "Console Default", background: "default",   bgType: "preset", accentColor: "#60CDFF" },
     { id: "b-neon",    name: "Neon Nights",     background: "linear-gradient(135deg, #0f0c29, #302b63, #24243e)", bgType: "preset", accentColor: "#e84393" },
@@ -2197,7 +2143,6 @@ const ThemeStore = (function() {
     const sameBg = (SettingsManager.isDefaultBg(t.background) && SettingsManager.isDefaultBg(s.background)) || t.background === s.background;
     return sameBg && String(t.accentColor).toLowerCase() === String(s.accentColor || "").toLowerCase();
   }
-  // Shrinks big uploaded wallpapers so a saved theme stays small
   function shrinkImage(dataUrl, maxDim, quality) {
     return new Promise(resolve => {
       const img = new Image();
@@ -2219,13 +2164,10 @@ const ThemeStore = (function() {
   return { builtin, list: () => custom.slice(), add, remove, matches, shrinkImage, reload: load, MAX_THEMES };
 })();
 
-/* ===================================================
-   Wallpaper tools - big uploaded images are compressed so they always fit in browser storage
-   =================================================== */
 const WallpaperTools = (function() {
-  const TARGET = 2 * 1024 * 1024;        // a saved wallpaper is squeezed to about 2 MB or less
-  const FALLBACKS = [1024 * 1024, 600 * 1024];   // used if the browser still refuses the save
-  const MAX_SIDE = 3840;                  // 4K is plenty for a wallpaper
+  const TARGET = 2 * 1024 * 1024;
+  const FALLBACKS = [1024 * 1024, 600 * 1024];
+  const MAX_SIDE = 3840;
   const mb = n => (n / 1048576).toFixed(1) + " MB";
 
   function readFile(file) {
@@ -2244,7 +2186,6 @@ const WallpaperTools = (function() {
       img.src = src;
     });
   }
-  // Re-encodes as JPEG, lowering quality and then size until the result is at most `target` characters.
   async function squeeze(dataUrl, target) {
     const img = await loadImage(dataUrl);
     const w = img.naturalWidth || img.width, h = img.naturalHeight || img.height;
@@ -2255,19 +2196,18 @@ const WallpaperTools = (function() {
       c.width = Math.max(1, Math.round(w * scale));
       c.height = Math.max(1, Math.round(h * scale));
       const ctx = c.getContext("2d");
-      ctx.fillStyle = "#000";                       // JPEG has no transparency
+      ctx.fillStyle = "#000";
       ctx.fillRect(0, 0, c.width, c.height);
       ctx.imageSmoothingQuality = "high";
       ctx.drawImage(img, 0, 0, c.width, c.height);
       out = c.toDataURL("image/jpeg", quality);
       if (out.length <= target) return out;
       if (quality > 0.62) quality -= 0.08; else { scale *= 0.85; quality = 0.8; }
-      await new Promise(r => setTimeout(r, 0));     // let the page breathe between attempts
+      await new Promise(r => setTimeout(r, 0));
     }
     return out;
   }
 
-  // Reads the file and returns { dataUrl, compressed, before, after }
   async function prepare(file, say, target) {
     target = target || TARGET;
     say = say || (() => {});
@@ -2279,7 +2219,6 @@ const WallpaperTools = (function() {
     return { dataUrl: small, compressed: true, before: file.size, after: small.length };
   }
 
-  // Prepares the image and applies it. Tries smaller sizes if the browser still can't store it.
   async function applyFile(file, updateFn, say) {
     say = say || (() => {});
     let r = await prepare(file, say, TARGET);
@@ -2293,14 +2232,10 @@ const WallpaperTools = (function() {
   return { prepare, applyFile, mb, TARGET };
 })();
 
-/* ===================================================
-   Data backup / restore (used by the Performance & Storage tab)
-   =================================================== */
 const DataBackup = (function() {
   const APP_NAME = "Console OS";
   const FORMAT = 1;
   const PREFIX = "win11_";
-  // Not backed up: the public chat cache and this device's anonymous chat id
   const EXCLUDE = [LS_KEYS.chat, "win11_chat_cleared_at_v1", "win11_chat_user_id_v1"];
   const MAX_BYTES = 25 * 1024 * 1024;
 
@@ -2333,7 +2268,6 @@ const DataBackup = (function() {
     setTimeout(() => URL.revokeObjectURL(url), 2000);
   }
 
-  // Validates a backup file's text. Only known-safe keys with string values are accepted.
   function parse(text) {
     let obj;
     try { obj = JSON.parse(text); } catch (e) { return { error: "That file isn't a valid backup (it couldn't be read as JSON)." }; }
@@ -2349,7 +2283,6 @@ const DataBackup = (function() {
     return { data: data, count: count, exportedAt: obj.exportedAt || null };
   }
 
-  // Replaces the current data with the backup. Rolls back if the browser runs out of storage.
   function apply(data) {
     const snapshot = collect();
     const wipe = () => Object.keys(collect()).forEach(k => { try { localStorage.removeItem(k); } catch (e) {} });
@@ -2367,9 +2300,6 @@ const DataBackup = (function() {
   return { download, parse, apply, MAX_BYTES };
 })();
 
-/* ===================================================
-   Performance & Storage helper
-   =================================================== */
 const PerfStorage = (function() {
   const KEY_INFO = {
     [LS_KEYS.settings]: "Desktop settings: theme, wallpaper, accent color, clock format, search bar, audio",
@@ -2552,7 +2482,6 @@ const PerfStorage = (function() {
     armConfirm(q('#psResetSettings'), () => { SettingsManager.resetDefaults(); });
     q('#psRefresh').addEventListener('click', refresh);
 
-    // --- Backup & Restore ---
     const bMsg = q('#psBackupMsg'), rInfo = q('#psRestoreInfo'), rMsg = q('#psRestoreMsg'), rFile = q('#psRestoreFile');
     let pendingBackup = null;
     const say = (t, isErr) => { bMsg.textContent = t; bMsg.style.color = isErr ? '#ff6b6b' : ''; };
@@ -2597,7 +2526,6 @@ const PerfStorage = (function() {
     const q = s => root.querySelector(s);
     const set = (s, t) => { const n = q(s); if (n) n.textContent = t; };
 
-    // --- localStorage ---
     const entries = storageEntries(localStorage);
     const total = entries.reduce((a, e) => a + e.bytes, 0);
     set('#ps-ls-size', fmtBytes(total));
@@ -2619,13 +2547,11 @@ const PerfStorage = (function() {
       </div>`;
     }).join('') : '<div class="settings-card-desc">Nothing is stored in localStorage yet. Pin an app, move an icon, or send a chat message to see data appear here.</div>';
 
-    // --- sessionStorage / cookies ---
     const ss = storageEntries(sessionStorage);
     set('#ps-ss', `${fmtBytes(ss.reduce((a, e) => a + e.bytes, 0))} · ${ss.length} key${ss.length === 1 ? "" : "s"}`);
     const cookieCount = document.cookie ? document.cookie.split(';').filter(c => c.trim()).length : 0;
     set('#ps-cookies', `${cookieCount} cookie${cookieCount === 1 ? "" : "s"}`);
 
-    // --- async storage details ---
     if (navigator.storage && navigator.storage.estimate) {
       navigator.storage.estimate().then(est => {
         const r = document.getElementById('perfRoot'); if (!r) return;
@@ -2649,7 +2575,6 @@ const PerfStorage = (function() {
       }).catch(() => { const n = root.querySelector('#ps-files'); if (n) n.textContent = 'Unavailable'; });
     }
 
-    // --- chat ---
     if (window.ChatEngine) {
       const c = window.ChatEngine.getStats();
       set('#ps-chat-count', String(c.count));
@@ -2665,7 +2590,6 @@ const PerfStorage = (function() {
       set('#ps-chat-limit', `${c.count} / ${c.limit} messages kept`);
     }
 
-    // --- performance ---
     set('#ps-uptime', fmtDuration(performance.now()));
     let loadMs = null;
     try {
@@ -3194,13 +3118,7 @@ SettingsManager.registerTab({
 <script>
 "use strict";
 if (window.__cosSwapping) throw new Error("Console OS: running an installed update instead of this file");
-/* ===================================================
-   FileStore - a small virtual file system kept in IndexedDB.
-   Two object stores: "nodes" (name, folder, size, dates) and "data" (the
-   contents, as text or as a Blob), so listing folders never loads big files.
-   If IndexedDB is unavailable it falls back to memory (and says so).
-   Used by File Manager, Text Editor and the desktop's New > Note.
-   =================================================== */
+
 const FileStore = (function() {
   const DB_NAME = "console_os_files_v1";
   const ROOT = "root";
@@ -3242,7 +3160,6 @@ const FileStore = (function() {
   const uid = () => "n" + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
   const sizeOf = d => typeof d === "string" ? new Blob([d]).size : (d && d.size) || 0;
 
-  /* ---------- storage back ends ---------- */
   function memAdapter() {
     const nodes = new Map(), data = new Map();
     const copy = o => o ? Object.assign({}, o) : null;
@@ -3315,7 +3232,6 @@ const FileStore = (function() {
   if (bc) bc.onmessage = e => listeners.slice().forEach(fn => { try { fn(e.data || {}); } catch (_) {} });
   function onChange(fn) { listeners.push(fn); return () => { const i = listeners.indexOf(fn); if (i >= 0) listeners.splice(i, 1); }; }
 
-  /* ---------- helpers ---------- */
   function cleanName(name) {
     name = String(name == null ? "" : name).replace(/[\\\/\u0000-\u001f]/g, " ").replace(/\s+/g, " ").trim().slice(0, MAX_NAME);
     return (name === "." || name === "..") ? "" : name;
@@ -3336,7 +3252,6 @@ const FileStore = (function() {
     return f;
   }
 
-  /* ---------- public API ---------- */
   async function get(id) {
     await ready();
     if (id === ROOT) return { id: ROOT, name: "This Browser", type: "folder", parent: null, size: 0, created: 0, modified: 0 };
@@ -3469,10 +3384,6 @@ const FileStore = (function() {
            extOf, mimeFor, isText, isImage, iconFor, fmtSize, cleanName, isPersistent: () => persistent };
 })();
 
-/* ===================================================
-   AppDialog - tiny in-OS dialogs (confirm / prompt / choice / alert).
-   Pass an app window's body to show it inside that window, or document.body for a full-screen one.
-   =================================================== */
 const AppDialog = (function() {
   function show(container, o) {
     return new Promise(resolve => {
@@ -3544,9 +3455,6 @@ const AppDialog = (function() {
   };
 })();
 
-/* ===================================================
-   FilePicker - pick a file to open, a place to save, or a folder
-   =================================================== */
 const FilePicker = (function() {
   function pick(container, o) {
     return new Promise(resolve => {
@@ -3650,9 +3558,6 @@ let lastContextAt = 0;
 const markContext = () => { lastContextAt = performance.now(); };
 const recentlyContext = () => performance.now() - lastContextAt < 450;
 
-/* ===================================================
-   Custom Context Menu
-   =================================================== */
 const ContextMenu = (function() {
   const el = $('ctxMenu');
   let isOpen = false;
@@ -3719,18 +3624,12 @@ const ContextMenu = (function() {
   return { show, hide };
 })();
 
-/* ===================================================
-   Notifications: corner toasts + a notification centre that opens from the clock.
-     Notify.push({ title, body, icon, appId, tag, timeout })
-   appId (e.g. "store:timer", "app:chat") is opened when the notification is clicked.
-   A repeated tag updates the toast that is already showing instead of stacking a new one.
-   =================================================== */
 const Notify = (function() {
   const KEY = "win11_notifications_v1";
   const MAX = 60, MAX_TOASTS = 4;
   const center = $('notifCenter'), listEl = $('ncList'), stack = $('toastStack'), clock = $('taskbarClock');
   let items = [], dnd = false, isOpen = false, agoTimer = null;
-  const toasts = new Map();   // tag or id -> { el, timer }
+  const toasts = new Map();
 
   function load() {
     try {
@@ -3757,7 +3656,6 @@ const Notify = (function() {
     return new Date(ts).toLocaleDateString();
   }
 
-  /* ----- toasts ----- */
   function dismissToast(key) {
     const t = toasts.get(key);
     if (!t) return;
@@ -3806,7 +3704,6 @@ const Notify = (function() {
     arm(key, ms);
   }
 
-  /* ----- centre ----- */
   function renderList() {
     listEl.innerHTML = '';
     $('ncDate').textContent = new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' });
@@ -3871,7 +3768,7 @@ const Notify = (function() {
       icon: String(o.icon || '🔔').slice(0, 4),
       appId: typeof o.appId === 'string' ? o.appId : '',
       ts: Date.now(),
-      read: isOpen            // already being looked at
+      read: isOpen
     };
     items.unshift(item);
     if (items.length > MAX) items.length = MAX;
@@ -3894,14 +3791,10 @@ const Notify = (function() {
 
   load(); updateBadge(); syncDnd();
   const api = { push, open, close, toggle: () => (isOpen ? close() : open()), isOpen: () => isOpen, isDnd: () => dnd };
-  window.Notify = api;   // the chat script (loaded earlier) looks it up here
+  window.Notify = api;
   return api;
 })();
 
-/* ===================================================
-   Taskbar window thumbnails: hover a running app's icon to see a live preview
-   (a scaled-down copy of the window; embedded web pages show a placeholder).
-   =================================================== */
 const WindowThumbs = (function() {
   const VIEW_W = 226, VIEW_H = 140;
   const card = $('thumbCard');
@@ -3924,7 +3817,7 @@ const WindowThumbs = (function() {
     view.addEventListener('click', () => {
       const id = curId;
       hide();
-      if (id) WindowManager.open(id);      // restores a minimised window and brings it to the front
+      if (id) WindowManager.open(id);
     });
     card.addEventListener('pointerenter', () => clearTimeout(hideTimer));
     card.addEventListener('pointerleave', () => scheduleHide());
@@ -3933,16 +3826,15 @@ const WindowThumbs = (function() {
   function snapshot(w) {
     const el = w.el;
     let W = el.offsetWidth, H = el.offsetHeight;
-    if (!W || !H) {                                  // minimised windows have no size right now, so use the last one we saw
+    if (!W || !H) {
       W = (w.lastSize && w.lastSize.w) || parseFloat(el.style.width) || 540;
       H = (w.lastSize && w.lastSize.h) || parseFloat(el.style.height) || 380;
     }
     const c = el.cloneNode(true);
     c.removeAttribute('id');
-    c.querySelectorAll('[id]').forEach(n => n.removeAttribute('id'));      // no duplicate ids in the page
+    c.querySelectorAll('[id]').forEach(n => n.removeAttribute('id'));
     c.classList.remove('minimized', 'maximized', 'snapped');
     c.querySelectorAll('.win-resize').forEach(n => n.remove());
-    // Typed text, ticks and drawings are not copied by cloneNode, so copy them across.
     const srcF = el.querySelectorAll('textarea, input, select'), dstF = c.querySelectorAll('textarea, input, select');
     srcF.forEach((f, i) => {
       const d = dstF[i];
@@ -4017,10 +3909,9 @@ const WindowThumbs = (function() {
     hideTimer = setTimeout(hide, 180);
   }
 
-  // Called by the taskbar every time it draws an icon that has a running window behind it
   function attach(btn, winId) {
     btn.dataset.winid = winId;
-    btn.removeAttribute('title');            // the thumbnail replaces the plain tooltip
+    btn.removeAttribute('title');
     btn.addEventListener('pointerenter', e => {
       if (e.pointerType && e.pointerType !== 'mouse') return;
       clearTimeout(hideTimer);
@@ -4038,9 +3929,6 @@ const WindowThumbs = (function() {
   return { attach, hide };
 })();
 
-/* ===================================================
-   Window Manager (minimize / maximize / close / drag / focus)
-   =================================================== */
 const WindowManager = (function() {
   const wins = new Map();
   let zTop = 1000;
@@ -4051,7 +3939,6 @@ const WindowManager = (function() {
   const RESIZE_DIRS = ['n', 's', 'e', 'w', 'ne', 'nw', 'se', 'sw'];
   let preview = null;
 
-  /* ---------- geometry helpers ---------- */
   const workW = () => window.innerWidth;
   const workH = () => window.innerHeight - TASKBAR_H;
   const readGeom = el => { const g = {}; GEOM_PROPS.forEach(p => { g[p] = el.style[p]; }); return g; };
@@ -4060,7 +3947,6 @@ const WindowManager = (function() {
     el.classList.toggle('custom-size', !!el.style.height);
   }
 
-  /* ---------- snap zones ---------- */
   function zoneRect(zone) {
     const W = workW(), H = workH(), half = Math.floor(W / 2);
     if (zone === 'left') return { left: 0, top: 0, width: half, height: H };
@@ -4111,7 +3997,6 @@ const WindowManager = (function() {
     if (b) { b.textContent = now ? '🗗' : '🗖'; b.title = now ? 'Restore Down' : 'Maximize'; }
   }
 
-  /* ---------- register ---------- */
   function register(el, opts) {
     opts = opts || {};
     const w = {
@@ -4119,9 +4004,9 @@ const WindowManager = (function() {
       el: el,
       title: opts.title || el.id,
       icon: opts.icon || '🗔',
-      itemId: opts.itemId || null,      // the Start Menu / desktop item this window belongs to (used for taskbar pins)
+      itemId: opts.itemId || null,
       onClose: opts.onClose || null,
-      beforeClose: opts.beforeClose || null,   // return false to keep the window open (e.g. unsaved changes)
+      beforeClose: opts.beforeClose || null,
       lastSize: null,
       snap: null,
       normal: null,
@@ -4154,7 +4039,6 @@ const WindowManager = (function() {
     return w;
   }
 
-  /* ---------- drag (with edge snapping) ---------- */
   function makeDraggable(w, bar) {
     let drag = null;
     bar.addEventListener('pointerdown', e => {
@@ -4171,11 +4055,10 @@ const WindowManager = (function() {
     bar.addEventListener('pointermove', e => {
       if (!drag || e.pointerId !== drag.pid) return;
       if (!drag.active) {
-        if (Math.hypot(e.clientX - drag.sx, e.clientY - drag.sy) < 4) return;   // a click, not a drag yet
+        if (Math.hypot(e.clientX - drag.sx, e.clientY - drag.sy) < 4) return;
         drag.active = true;
         const wasMax = w.el.classList.contains('maximized');
         if (wasMax || w.snap) {
-          // Dragging a maximized / snapped window pulls it back to its normal size under the pointer
           if (wasMax) setMaximized(w, false);
           unsnap(w);
           const W = w.el.offsetWidth;
@@ -4198,7 +4081,7 @@ const WindowManager = (function() {
       drag = null;
       hidePreview();
       if (!d.active || !d.zone || e.type === 'pointercancel') return;
-      applyGeom(w.el, d.start);            // go back to where it was before the drag; that is the "restore" size
+      applyGeom(w.el, d.start);
       if (d.zone === 'max') {
         setMaximized(w, true);
       } else {
@@ -4210,7 +4093,6 @@ const WindowManager = (function() {
     bar.addEventListener('pointercancel', up);
   }
 
-  /* ---------- resize (8 handles) ---------- */
   function makeResizable(w) {
     w.el.querySelectorAll('.win-resize').forEach(h => {
       let st = null;
@@ -4237,13 +4119,13 @@ const WindowManager = (function() {
         ht = Math.max(MIN_H, ht);
         if (d.includes('w')) l = st.l + st.w - wd;
         if (d.includes('n')) t = st.t + st.h - ht;
-        if (l < 0) { if (d.includes('w')) wd += l; l = 0; }          // stay on screen
+        if (l < 0) { if (d.includes('w')) wd += l; l = 0; }
         if (t < 0) { if (d.includes('n')) ht += t; t = 0; }
         if (l + wd > window.innerWidth) wd = window.innerWidth - l;
         if (t + ht > window.innerHeight - TASKBAR_H) ht = window.innerHeight - TASKBAR_H - t;
         wd = Math.max(MIN_W, wd);
         ht = Math.max(MIN_H, ht);
-        // Any manual resize takes the window out of its snapped state
+
         w.snap = null;
         w.el.classList.remove('snapped');
         w.el.classList.add('custom-size');
@@ -4263,12 +4145,10 @@ const WindowManager = (function() {
     });
   }
 
-  // Keep snapped windows glued to their half when the browser window changes size
   window.addEventListener('resize', () => {
     wins.forEach(w => { if (w.snap) snapTo(w, w.snap); });
   });
 
-  /* ---------- state ---------- */
   function setState(w, state) {
     w.state = state;
     w.el.dataset.state = state;
@@ -4287,7 +4167,7 @@ const WindowManager = (function() {
   function minimize(id) {
     const w = wins.get(id);
     if (!w) return;
-    if (w.el.offsetWidth) w.lastSize = { w: w.el.offsetWidth, h: w.el.offsetHeight };   // remembered for the taskbar thumbnail
+    if (w.el.offsetWidth) w.lastSize = { w: w.el.offsetWidth, h: w.el.offsetHeight };
     w.el.classList.add('minimized');
     setState(w, 'min');
     if (focusedId === id) focusedId = null;
@@ -4339,7 +4219,6 @@ const WindowManager = (function() {
     renderStrip();
   }
 
-  // Taskbar behaviour shared by pinned icons and the open-windows strip
   function activate(id) {
     const w = wins.get(id);
     if (!w) return;
@@ -4354,7 +4233,6 @@ const WindowManager = (function() {
     return null;
   }
 
-  // Windows that belong to a pinned app are shown on the pinned icon instead (no duplicates)
   function renderWindows() {
     const c = $('taskbarWindows');
     if (!c) return;
@@ -4386,10 +4264,6 @@ const WindowManager = (function() {
   };
 })();
 
-/* ===================================================
-   Apps, game data & registry
-   =================================================== */
-// Desktop apps data including Settings App
 const desktopApps = [
   { id: "app:settings", name: "Settings", type: "desktop", kind: "app", icon: "⚙️", category: "Desktop App", action: () => openSettingsApp() },
   { id: "app:appstore", name: "Appstore", type: "desktop", kind: "app", icon: "🛍️", category: "Desktop App", action: () => AppStore.open() },
@@ -4401,7 +4275,6 @@ const desktopApps = [
   { id: "app:browser", name: "Web Browser", type: "portal", kind: "app", url: "https://ltorl.github.io/knoiren-browser", icon: "🌍", category: "Desktop App" }
 ];
 
-// Game Groups data matching original groupings
 const gameGroups = [
   {
     title: "Game Hubs",
@@ -4571,7 +4444,6 @@ function launchItem(item) {
 
 function showItemMenu(x, y, item, opts) {
   opts = opts || {};
-  // Files and folders from the Desktop folder of File Manager get their own small menu
   if (item.kind === 'file') {
     const fileEntries = [{ icon: '📂', label: 'Open', onClick: () => launchItem(item) }];
     if (opts.rename) fileEntries.push({ icon: '✏️', label: 'Rename', onClick: () => setTimeout(() => Desktop.startRename(item.id), 0) });
@@ -4616,9 +4488,6 @@ function showItemMenu(x, y, item, opts) {
   ContextMenu.show(x, y, entries);
 }
 
-/* ===================================================
-   Taskbar pinned apps (empty by default)
-   =================================================== */
 const Taskbar = (function() {
   let pins = [];
 
@@ -4644,8 +4513,6 @@ const Taskbar = (function() {
     save();
     render();
   }
-  // Pinned icons double as running-app icons: if the app has an open window the icon shows the
-  // running indicator and clicking it minimizes / restores / focuses that window instead of launching again.
   function renderPinned() {
     const c = $('taskbarPinned');
     if (!c) return;
@@ -4681,23 +4548,18 @@ const Taskbar = (function() {
   return { init: () => { load(); render(); }, isPinned, toggle, unpinAll, prune, render, renderPinned };
 })();
 
-/* ===================================================
-   Desktop manager: free-positioned icons, hold-to-drag, folders
-   =================================================== */
 const Desktop = (function() {
   const el = $('desktop');
-  let ICON_W = 84, ICON_H = 94;           // set from Settings → Personalization → Desktop Icon Size
+  let ICON_W = 84, ICON_H = 94;
   const GAP = 20, PAD = 24;
-  const HOLD_MS = 1200; // hold an icon this long before it can be dragged
+  const HOLD_MS = 1200;
 
   let layout = { positions: {}, folders: [], shortcuts: [], names: {}, iconSize: 'medium' };
   let current = {};
-  let deskFiles = [], deskSig = '';       // files and folders that live in File Manager's Desktop folder (notes etc.)
-  const canNest = it => it.kind !== 'folder' && it.kind !== 'file';   // only apps/shortcuts can be dropped into desktop folders
-  // Items that can be put on the desktop as shortcuts (installed Appstore apps and Start Menu games/links)
+  let deskFiles = [], deskSig = '';
+  const canNest = it => it.kind !== 'folder' && it.kind !== 'file';
   const isShortcutId = id => typeof id === 'string' && (id.indexOf('store:') === 0 || id.indexOf('game:') === 0);
 
-  /* ---------- persistence ---------- */
   function load() {
     try {
       const raw = JSON.parse(localStorage.getItem(LS_KEYS.layout) || 'null');
@@ -4729,7 +4591,6 @@ const Desktop = (function() {
     try { localStorage.setItem(LS_KEYS.layout, JSON.stringify(layout)); } catch (e) {}
   }
 
-  /* ---------- items ---------- */
   function getFolder(id) { return layout.folders.find(f => f.id === id) || null; }
   function folderItem(f) {
     return { id: f.id, name: f.name, icon: '📁', category: 'Folder', kind: 'folder', type: 'folder', action: () => openFolder(f.id) };
@@ -4758,7 +4619,6 @@ const Desktop = (function() {
   }
   function findItem(id) { return visibleItems().find(it => it.id === id) || null; }
 
-  /* ---------- grid / positions ---------- */
   function slotRows() {
     return Math.max(1, Math.floor((el.clientHeight - PAD * 2 + GAP) / (ICON_H + GAP)));
   }
@@ -4773,7 +4633,6 @@ const Desktop = (function() {
     };
   }
   const overlapsAny = (p, placed) => placed.some(q => overlaps(p, q));
-  // The closest spot to `want` that doesn't touch any icon in `placed`: tidy grid cells first, then a finer scan.
   function nearestFree(want, placed) {
     const rows = slotRows();
     const cols = Math.max(1, Math.floor((el.clientWidth - PAD * 2 + GAP) / (ICON_W + GAP)));
@@ -4803,7 +4662,6 @@ const Desktop = (function() {
     const placed = [];
     const conflicts = [];
     const rows = slotRows();
-    // 1) icons whose saved spot is free keep it
     items.forEach(it => {
       const p = layout.positions[it.id];
       if (p && typeof p.x === 'number' && typeof p.y === 'number') {
@@ -4812,7 +4670,6 @@ const Desktop = (function() {
         else { pos[it.id] = c; placed.push(c); }
       }
     });
-    // 2) icons that would overlap (e.g. after switching to large icons) move to the nearest free spot
     conflicts.forEach(({ it, c }) => {
       const f = nearestFree(c, placed) || c;
       pos[it.id] = f;
@@ -4833,7 +4690,6 @@ const Desktop = (function() {
     Object.keys(current).forEach(id => { layout.positions[id] = { x: current[id].x, y: current[id].y }; });
   }
 
-  /* ---------- rendering ---------- */
   function render() {
     const items = visibleItems();
     current = computeLayout(items);
@@ -4865,7 +4721,6 @@ const Desktop = (function() {
     el.querySelectorAll('.drop-target').forEach(n => n.classList.remove('drop-target'));
   }
 
-  /* ---------- per-icon interaction ---------- */
   function attach(d, it) {
     d.style.setProperty('--hold-ms', HOLD_MS + 'ms');
     let timer = null, pid = null, ready = false, dragging = false;
@@ -4968,7 +4823,6 @@ const Desktop = (function() {
     }
     let x = parseFloat(d.style.left) || 0;
     let y = parseFloat(d.style.top) || 0;
-    // Dropped on top of another icon? Settle into the nearest free spot instead of overlapping it.
     const others = Object.keys(current).filter(id => id !== it.id).map(id => current[id]);
     if (overlapsAny({ x, y }, others)) {
       const spot = nearestFree({ x, y }, others);
@@ -4980,7 +4834,6 @@ const Desktop = (function() {
     save();
   }
 
-  /* ---------- folders ---------- */
   function nextFolderName() {
     const names = new Set(layout.folders.map(f => f.name.toLowerCase()));
     let name = 'New Folder';
@@ -5026,21 +4879,18 @@ const Desktop = (function() {
   function deleteFolder(id) {
     const f = getFolder(id);
     if (!f) return;
-    // Keep every other icon exactly where it is, then drop the folder.
-    // Shortcuts that were inside it go back onto the desktop (they are never lost).
     freezeLayout();
     layout.folders = layout.folders.filter(x => x.id !== id);
     delete layout.positions[id];
     f.items.forEach(appId => { delete layout.positions[appId]; });
-    save(); // persisted, so the folder stays deleted after a reload
+    save();
     const wid = folderWinId(id);
     if (WindowManager.get(wid)) WindowManager.destroy(wid);
     render();
     refreshFolderWindows();
-    Taskbar.prune(); // unpin the folder if it was pinned to the taskbar
+    Taskbar.prune();
   }
 
-  /* ---------- folder windows ---------- */
   function folderWinId(id) { return 'folderWin-' + id.replace(/[^a-zA-Z0-9_-]/g, '_'); }
 
   function openFolder(id) {
@@ -5109,11 +4959,10 @@ const Desktop = (function() {
     layout.folders.forEach(f => { if (WindowManager.get(folderWinId(f.id))) renderFolder(f.id); });
   }
 
-  /* ---------- desktop shortcuts (Appstore apps and Start Menu items) ---------- */
   function hasShortcut(id) { return layout.shortcuts.includes(id); }
   function addShortcut(id) {
     if (!isShortcutId(id) || !Registry.get(id) || hasShortcut(id)) return false;
-    freezeLayout();                 // keep every existing icon exactly where it is
+    freezeLayout();
     layout.shortcuts.push(id);
     save();
     render();
@@ -5134,10 +4983,8 @@ const Desktop = (function() {
     return true;
   }
 
-  /* ---------- icon size ---------- */
   const sizeKey = () => (ICON_SIZES[SettingsManager.getSettings().iconSize] ? SettingsManager.getSettings().iconSize : 'medium');
   function applyIconSize() { const d = ICON_SIZES[sizeKey()]; ICON_W = d.w; ICON_H = d.h; }
-  // Moves saved positions along with the new cell size, so a layout keeps its shape and icons don't pile up
   function rescaleForSize(newKey) {
     const oldKey = ICON_SIZES[layout.iconSize] ? layout.iconSize : 'medium';
     if (oldKey === newKey) return false;
@@ -5153,16 +5000,15 @@ const Desktop = (function() {
   function onSettingsChange() {
     const key = sizeKey();
     if (key === layout.iconSize) return;
-    freezeLayout();             // pin every icon where it is now, then scale them all
+    freezeLayout();
     rescaleForSize(key);
     applyIconSize();
-    render();                   // render() moves any icons that no longer fit to the nearest free spot...
-    freezeLayout();             // ...and we keep that result
+    render();
+    freezeLayout();
     save();
   }
   function setIconSize(key) { if (ICON_SIZES[key]) SettingsManager.update({ iconSize: key }); }
 
-  /* ---------- files on the desktop (File Manager's Desktop folder) ---------- */
   function refreshDeskFiles(force) {
     return FileStore.children('desktop').then(list => {
       list.sort((a, b) => (a.created || 0) - (b.created || 0));
@@ -5196,7 +5042,6 @@ const Desktop = (function() {
     } else go();
   }
 
-  /* ---------- renaming desktop icons ---------- */
   function hasCustomName(id) { return !!layout.names[id]; }
   function resetName(id) { delete layout.names[id]; save(); render(); }
   function applyRename(id, raw) {
@@ -5231,7 +5076,6 @@ const Desktop = (function() {
     d.classList.add('renaming');
     label.replaceWith(input);
     input.focus();
-    // For files, select just the name so the extension (.txt) is not lost by accident
     const dot = it.name.lastIndexOf('.');
     if (it.kind === 'file' && it.node && it.node.type === 'file' && dot > 0) input.setSelectionRange(0, dot); else input.select();
     let finished = false;
@@ -5250,7 +5094,6 @@ const Desktop = (function() {
     ['pointerdown', 'pointerup', 'click', 'dblclick', 'contextmenu'].forEach(ev => input.addEventListener(ev, e => e.stopPropagation()));
   }
 
-  /* ---------- sorting / refresh / reset ---------- */
   function sortIcons(mode) {
     const items = visibleItems();
     if (mode === 'name') {
@@ -5281,7 +5124,6 @@ const Desktop = (function() {
     Taskbar.prune();
   }
 
-  /* ---------- desktop background context menu ---------- */
   function showMenu(x, y) {
     const dark = SettingsManager.getSettings().theme !== 'light';
     ContextMenu.show(x, y, [
@@ -5349,8 +5191,6 @@ document.addEventListener('contextmenu', e => {
    =================================================== */
 const groupsContainer = $('startMenuGroups');
 
-// Builds the Start Menu. Called on load and again whenever Appstore installs change.
-// Installed Appstore apps are appended to the group named in APPSTORE_CONFIG.startMenuGroup ("Extra").
 function renderStartMenu() {
   groupsContainer.innerHTML = '';
   const groups = gameGroups.map(g => ({
@@ -5402,7 +5242,6 @@ function renderStartMenu() {
   });
 }
 
-// Search Logic
 const tbSearchBox = $('tbSearchBox');
 const tbSearchInput = $('tbSearchInput');
 const searchFlyout = $('searchFlyout');
@@ -5760,9 +5599,6 @@ document.addEventListener('keydown', (e) => {
   }
 });
 
-/* ===================================================
-   Quick settings tray (volume + theme) in the taskbar
-   =================================================== */
 const QuickSettings = (function() {
   const btn = $('trayQuickBtn');
   const fly = $('quickSettings');
@@ -5776,7 +5612,6 @@ const QuickSettings = (function() {
     return '🔊';
   }
 
-  // Updates the tray icons and the flyout controls in place (never rebuilds them, so dragging the slider is smooth)
   function sync() {
     const s = SettingsManager.getSettings();
     const dark = s.theme !== 'light';
@@ -5825,7 +5660,6 @@ const QuickSettings = (function() {
   return { sync, open, close };
 })();
 
-// Live Clock Supporting 12/24 hour settings
 function updateClock() {
   const now = new Date();
   const format = SettingsManager.getSettings().clockFormat || "12";
@@ -5860,7 +5694,6 @@ window.addEventListener('DOMContentLoaded', () => {
     onClose: () => { vidFrame.src = 'about:blank'; }
   });
 
-  // Chat: clear button (two-click confirm)
   const clearBtn = $('chatClearBtn');
   if (clearBtn) armConfirm(clearBtn, () => { if (window.ChatEngine) window.ChatEngine.clear(); }, 'Click to confirm');
 
@@ -5945,12 +5778,9 @@ const APPSTORE_CATALOG = [
   { id: "photopea", type: "link", name: "Photopea", icon: "🖌️", category: "Creative",
     description: "Free online image editor.", url: "https://www.photopea.com/" },
   { id: "desmos", type: "link", name: "Desmos Graphing", icon: "📈", category: "Reference",
-    description: "Online graphing calculator.", url: "https://www.desmos.com/calculator" },
-  { id: "game-2048", type: "link", name: "2048", icon: "🔢", category: "Games",
-    description: "Slide the tiles and reach 2048.", url: "https://play2048.co/" }
+    description: "Online graphing calculator.", url: "https://www.desmos.com/calculator" }
 ];
 
-// Catch catalog mistakes early (ids must be unique and underscore-free so data cleanup can't touch another app).
 (function() {
   const seen = new Set();
   APPSTORE_CATALOG.forEach(e => {
@@ -5959,9 +5789,6 @@ const APPSTORE_CATALOG = [
   });
 })();
 
-/* =====================================================================
-   APP WINDOWS  -  generic window factory used by the store and every built-in app
-   ===================================================================== */
 const AppWindows = (function() {
   const winId = id => 'appWin-' + String(id).replace(/[^a-zA-Z0-9_-]/g, '_');
 
@@ -6011,7 +5838,7 @@ const AppWindows = (function() {
       id: def.id,
       storage: makeStorage(def.id),
       onClose: fn => { if (typeof fn === 'function') closers.push(fn); },
-      beforeClose: fn => { if (typeof fn === 'function') guards.push(fn); },   // return false to keep the window open
+      beforeClose: fn => { if (typeof fn === 'function') guards.push(fn); },
       close: () => WindowManager.close(wid),
       setTitle: t => WindowManager.setTitle(wid, t)
     };
@@ -6088,7 +5915,6 @@ const AppStore = (function() {
   const isInstalled = id => installed.includes(id);
   const resolveUrl = e => (e.proxy && cfg.proxyPrefix) ? cfg.proxyPrefix + e.url : e.url;
 
-  // Turns a catalog entry into the item shape the Start Menu / search / taskbar already understand.
   function toItem(e) {
     const item = {
       id: 'store:' + e.id, name: e.name, icon: e.icon, category: 'Appstore',
@@ -6117,7 +5943,6 @@ const AppStore = (function() {
     return () => { const i = listeners.indexOf(fn); if (i >= 0) listeners.splice(i, 1); };
   }
 
-  // Deletes everything a built-in app saved through ctx.storage (keys: win11_app_<id>_<key>).
   function clearData(id) {
     const prefix = cfg.appDataPrefix + id + '_';
     try {
@@ -6137,12 +5962,11 @@ const AppStore = (function() {
       if (typeof Notify !== 'undefined') Notify.push({ title: e.name + ' installed', body: 'Find it in Start Menu → ' + cfg.startMenuGroup + '.', icon: e.icon, appId: 'store:' + e.id });
     }
   }
-  // Opens an app's window even if it is not installed (used when a file needs File Manager / Text Editor)
   function openEntry(id) { const e = find(id); if (e) { const it = toItem(e); if (it.action) it.action(); } }
   function uninstall(id) {
     installed = installed.filter(x => x !== id);
-    AppWindows.close(id);   // close first: the app may do a final save while closing
-    clearData(id);          // ...then wipe its saved data
+    AppWindows.close(id);
+    clearData(id);
     if (typeof Desktop !== 'undefined') Desktop.removeShortcut('store:' + id);
     changed();
   }
@@ -6182,7 +6006,7 @@ const AppStore = (function() {
    ===================================================================== */
 function StoreUI(body, ctx) {
   let view = 'discover', category = 'All', query = '';
-  let confirmId = null, confirmTimer = null;   // two-click confirm for uninstalling apps that have saved data
+  let confirmId = null, confirmTimer = null;
 
   body.innerHTML = `
     <div class="as-root">
@@ -6288,7 +6112,6 @@ function StoreUI(body, ctx) {
     else if (btn.dataset.act === 'uninstall') {
       const entry = AppStore.find(id);
       if (entry && entry.type === 'app' && confirmId !== id) {
-        // Built-in apps keep saved data, so ask for a second click before deleting it.
         confirmId = id;
         confirmTimer = setTimeout(() => { confirmId = null; render(); }, 3000);
         render();
@@ -6592,7 +6415,7 @@ function TimerApp(body, ctx) {
     return ((m ? m + ' min' : '') + (m && r ? ' ' : '') + (r ? r + ' sec' : '')) || '0 sec';
   };
   function timesUp() {
-    Sounds.alarm();   // follows the master volume and the sound-effects switch
+    Sounds.alarm();
     if (typeof Notify !== 'undefined') Notify.push({ title: "Time's up!", body: 'Your ' + tmWords(tmTotal) + ' timer has finished.', icon: '⏱️', appId: 'store:timer', timeout: 10000 });
   }
   q('.tm-start').addEventListener('click', () => {
@@ -6627,7 +6450,6 @@ function TimerApp(body, ctx) {
 const FMBridge = { instance: null, pending: null };
 const EditorBridge = { instance: null, pending: null };
 
-// Opens (or re-uses) the File Manager window. Works even if the app isn't installed from the Appstore.
 const FileManagerAPI = {
   show(folderId, selectId, openIt) {
     const wid = AppWindows.winId('file-manager');
@@ -6652,7 +6474,6 @@ const TextEditorAPI = {
     }
   }
 };
-// What happens when you open a file from the desktop: text → Text Editor, folder → File Manager, pictures/media → preview in File Manager
 const FileOpen = {
   async open(id) {
     try {
@@ -6680,7 +6501,7 @@ function FileManagerApp(body, ctx) {
   let selected = new Set(), anchor = null;
   let sortKey = 'name', sortDir = 1, filter = '';
   let nodes = [];
-  let clip = null;                       // { mode: 'copy' | 'cut', ids: [...] }
+  let clip = null;
   let refreshTimer = null, disposed = false;
 
   body.innerHTML = `
@@ -6737,7 +6558,6 @@ function FileManagerApp(body, ctx) {
     return arr;
   }
 
-  /* ----- drawing ----- */
   async function renderPath() {
     const crumbs = await S.path(folderId);
     const box = q('.fm-path');
@@ -6836,7 +6656,6 @@ function FileManagerApp(body, ctx) {
     }
   }
 
-  /* ----- opening / previewing / downloading ----- */
   async function blobOf(n) {
     const d = await S.readData(n.id);
     const type = n.mime || S.mimeFor(n.name);
@@ -6887,7 +6706,6 @@ function FileManagerApp(body, ctx) {
     download(n);
   }
 
-  /* ----- actions ----- */
   async function newFolder() {
     if (atRoot()) return;
     const name = await AppDialog.prompt(body, { title: 'New folder', value: 'New folder' });
@@ -6956,7 +6774,6 @@ function FileManagerApp(body, ctx) {
     await refresh();
   }
 
-  /* ----- events ----- */
   body.addEventListener('click', e => {
     const b = e.target.closest('[data-a]');
     if (!b || b.disabled) return;
@@ -7061,10 +6878,9 @@ function FileManagerApp(body, ctx) {
   }).catch(fail);
 }
 
-/* ---------- Text Editor ---------- */
 function TextEditorApp(body, ctx) {
   const S = FileStore;
-  const MAX_BYTES = 10 * 1024 * 1024;     // bigger files are better downloaded than edited in a text box
+  const MAX_BYTES = 10 * 1024 * 1024;
   const prefs = Object.assign({ size: 14, wrap: false }, ctx.storage.get('prefs', {}));
   let cur = { id: null, name: 'Untitled.txt', parent: 'documents' };
   let dirty = false, closing = false, statsTimer = null, disposed = false;
@@ -7197,7 +7013,6 @@ function TextEditorApp(body, ctx) {
     }
   });
 
-  // Closing with unsaved changes asks first
   ctx.beforeClose(() => {
     if (!dirty || closing) return true;
     ensureSaved().then(ok => { if (ok && !disposed) { closing = true; ctx.close(); } });
@@ -7206,7 +7021,6 @@ function TextEditorApp(body, ctx) {
   const warnUnload = e => { if (dirty) { e.preventDefault(); e.returnValue = ''; } };
   window.addEventListener('beforeunload', warnUnload);
 
-  // If the open file is renamed or deleted in File Manager, keep the title honest
   const offChange = S.onChange(async () => {
     if (!cur.id || disposed) return;
     try {
@@ -7273,7 +7087,6 @@ const ConsoleUpdater = (function() {
     return true;
   }
 
-  /* ---------- banner ---------- */
   function ensureEl() {
     if (el) return el;
     el = document.createElement("div");
@@ -7282,7 +7095,7 @@ const ConsoleUpdater = (function() {
     el.innerHTML = '<div class="cu-card" role="alert"><div class="cu-head"><div class="cu-icon">⬆️</div><div><div class="cu-title"></div><div class="cu-sub"></div></div></div><div class="cu-notes"></div><div class="cu-bar"><i></i></div><div class="cu-actions"><button type="button" class="settings-btn cu-go">Update now</button><button type="button" class="settings-btn settings-btn-secondary cu-later">Later</button></div></div><button type="button" class="cu-pill">⬆️ Update available</button>';
     document.body.appendChild(el);
     el.querySelector(".cu-go").addEventListener("click", () => install());
-    el.querySelector(".cu-later").addEventListener("click", () => el.classList.add("mini"));   // collapses, never disappears
+    el.querySelector(".cu-later").addEventListener("click", () => el.classList.add("mini"));
     el.querySelector(".cu-pill").addEventListener("click", () => el.classList.remove("mini"));
     return el;
   }
@@ -7305,7 +7118,6 @@ const ConsoleUpdater = (function() {
     el.querySelectorAll(".cu-actions button").forEach(b => { b.disabled = !!text; });
   }
 
-  /* ---------- checking ---------- */
   function parse(text) {
     const v = /CONSOLE_OS_VERSION\s*=\s*"([^"]{1,40})"/.exec(text);
     if (!v || !/\d/.test(v[1])) return null;
@@ -7325,7 +7137,7 @@ const ConsoleUpdater = (function() {
     return { text, info };
   }
 
-  let pending = null;   // { text, info } kept in memory after a check so installing is instant
+  let pending = null;
   async function check(opts) {
     opts = opts || {};
     const url = sourceUrl();
@@ -7335,7 +7147,7 @@ const ConsoleUpdater = (function() {
     try {
       const got = await download(url);
       state.lastChecked = Date.now();
-      try { localStorage.setItem(URL_KEY, url); } catch (e) {}   // remember a working source so later versions keep it even if they forget to include it
+      try { localStorage.setItem(URL_KEY, url); } catch (e) {}
       let failed = ""; try { failed = localStorage.getItem(FAILED) || ""; } catch (e) {}
       if (cmp(got.info.version, CONSOLE_OS_VERSION) > 0 && (opts.manual || got.info.version !== failed)) {
         const wasKnown = !!(state.available && state.available.version === got.info.version);
@@ -7355,7 +7167,6 @@ const ConsoleUpdater = (function() {
     } finally { busy = false; }
   }
 
-  /* ---------- installing ---------- */
   async function install() {
     if (!state.available) return;
     setBusy("Downloading…");
@@ -7385,11 +7196,9 @@ const ConsoleUpdater = (function() {
     reloadTop();
   }
 
-  /* ---------- schedule ---------- */
   function start() {
     loadState();
-    if (state.available) showBanner();          // keep nagging even before the network answers
-    // A freshly installed update that got this far is healthy: clear the crash guard.
+    if (state.available) showBanner();
     setTimeout(() => { try { localStorage.removeItem(TRIAL); } catch (e) {} }, 2500);
     setTimeout(() => check({ quiet: !!state.available }), 4000);
     setInterval(() => check({ quiet: true }), EVERY);
