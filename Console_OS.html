@@ -3,8 +3,8 @@
 
 // To publish an update: change CONSOLE_OS_VERSION (higher number), optionally write what changed in
 
-var CONSOLE_OS_VERSION = "2026.10.33";
-var CONSOLE_OS_UPDATE_NOTES = "Start search now finds files from File Manager. The update address is locked, and old stored updates are cleaned up.";
+var CONSOLE_OS_VERSION = "2026.10.34";
+var CONSOLE_OS_UPDATE_NOTES = "File Manager can now zip and extract files, images open in a new Photo Viewer, and File Manager and Text Editor no longer appear in the Appstore.";
 var CONSOLE_OS_UPDATE_URL = "https://raw.githubusercontent.com/SolsticeHz/HTML-Console-OS/refs/heads/main/Console_OS.html";
 (function () {
   try {
@@ -1215,6 +1215,13 @@ fullscreen-portal {
 .fm-prev-box img, .fm-prev-box video { max-width: 100%; max-height: 60vh; border-radius: 6px; }
 .fm-prev-box audio { width: 100%; }
 
+.pv-root { display: flex; flex-direction: column; height: 100%; min-height: 0; }
+.pv-stage { flex: 1; min-height: 0; position: relative; overflow: hidden; background: repeating-conic-gradient(rgba(128,128,128,.14) 0% 25%, transparent 0% 50%) 50% / 20px 20px; cursor: grab; touch-action: none; }
+.pv-stage.drag { cursor: grabbing; }
+.pv-img { position: absolute; left: 0; top: 0; transform-origin: 0 0; max-width: none; user-select: none; -webkit-user-drag: none; }
+.pv-msg { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: var(--text-muted); font-size: 13px; text-align: center; padding: 20px; pointer-events: none; }
+.pv-name { margin-left: auto; font-size: 12px; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.pv-status { display: flex; justify-content: space-between; gap: 10px; padding: 4px 10px; font-size: 11px; color: var(--text-muted); border-top: 1px solid var(--line); background: var(--surface-3); }
 .te-root { display: flex; flex-direction: column; height: 100%; min-height: 0; }
 .te-bar { display: flex; gap: 4px; align-items: center; padding: 6px 8px; border-bottom: 1px solid var(--line); background: var(--surface-3); flex-wrap: wrap; }
 .te-name { margin-left: auto; font-size: 12px; color: var(--text-soft); max-width: 38%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -3050,15 +3057,6 @@ SettingsManager.registerTab({
           <input type="url" id="upUrl" class="settings-input" placeholder="https://…/Console_OS.html" value="${esc(U.sourceUrl())}" readonly />
         </div>
         <div class="settings-card-desc">${U.urlLocked() ? "This address is built into this version and can't be changed here." : "No update address is built into this version. It is set by CONSOLE_OS_UPDATE_URL at the top of the file."}</div>
-      </div>
-      <div class="extra-card">
-        <div class="extra-card-header">Publishing an update</div>
-        <p style="font-size: 12px; color: var(--text-muted); line-height: 1.5; margin: 0;">
-          1) Edit the file: raise CONSOLE_OS_VERSION and write a line in CONSOLE_OS_UPDATE_NOTES.<br>
-          2) Upload it to the update source address, replacing the old file.<br>
-          3) Everyone running an older version gets the update notification.<br>
-          Tip: if an update ever misbehaves, add <b>#safe</b> to the address to skip it.
-        </p>
       </div>`;
     const q = s => container.querySelector(s);
     const status = t => { const el = q("#upStatus"); if (el) el.textContent = t; };
@@ -5812,10 +5810,13 @@ const APPSTORE_CATALOG = [
     window: { width: 380, height: 420 }, mount: TimerApp },
   { id: "file-manager", type: "app", name: "File Manager", icon: "🗂️", category: "Tools",
     description: "Browse, upload, rename, copy, move and delete files kept in your browser (IndexedDB, so big files fit). Files stay even if you uninstall.",
-    window: { width: 780, height: 520 }, mount: FileManagerApp },
+    window: { width: 780, height: 520 }, mount: FileManagerApp, system: true },
   { id: "text-editor", type: "app", name: "Text Editor", icon: "📝", category: "Productivity",
     description: "Open, edit and save text files stored in your browser. Ctrl+S saves. Works with desktop notes.",
-    window: { width: 720, height: 520 }, mount: TextEditorApp },
+    window: { width: 720, height: 520 }, mount: TextEditorApp, system: true },
+  { id: "photo-viewer", type: "app", name: "Photo Viewer", icon: "🖼️", category: "Tools",
+    description: "View pictures saved in File Manager. Zoom, pan and flip through a folder.",
+    window: { width: 760, height: 540 }, mount: PhotoViewerApp, system: true },
 
   /* ---------- Link apps (note: some sites refuse to be shown inside other pages) ---------- */
   { id: "wikipedia", type: "link", name: "Wikipedia", icon: "📖", category: "Reference",
@@ -5954,10 +5955,11 @@ const AppStore = (function() {
                category: cfg.customCategory, description: url, url: url, custom: true };
     }).filter(Boolean);
     const rawInstalled = readJSON(cfg.installedKey, []);
-    installed = (Array.isArray(rawInstalled) ? rawInstalled : []).filter((id, i, a) => typeof id === 'string' && a.indexOf(id) === i && find(id));
+    installed = (Array.isArray(rawInstalled) ? rawInstalled : []).filter((id, i, a) => typeof id === 'string' && a.indexOf(id) === i && find(id) && !find(id).system);
   }
 
   const catalog = () => APPSTORE_CATALOG.concat(custom);
+  const storeCatalog = () => catalog().filter(e => !e.system);   // built-in system apps (File Manager, Text Editor, Photo Viewer) are not shown in the Appstore
   function find(id) { return catalog().find(e => e.id === id) || null; }
   const isInstalled = id => installed.includes(id);
   const resolveUrl = e => (e.proxy && cfg.proxyPrefix) ? cfg.proxyPrefix + e.url : e.url;
@@ -5966,8 +5968,8 @@ const AppStore = (function() {
     const item = {
       id: 'store:' + e.id, name: e.name, icon: e.icon, category: 'Appstore',
       kind: 'store', type: e.type === 'link' ? 'portal' : 'app',
-      hasData: e.type === 'app',
-      onUninstall: () => uninstall(e.id)
+      hasData: e.type === 'app' && !e.system,
+      onUninstall: e.system ? null : () => uninstall(e.id)
     };
     if (e.type === 'link') item.url = resolveUrl(e);
     else item.action = () => AppWindows.open({ id: e.id, itemId: 'store:' + e.id, title: e.name, icon: e.icon, width: e.window && e.window.width, height: e.window && e.window.height, mount: e.mount });
@@ -5976,7 +5978,7 @@ const AppStore = (function() {
   const installedItems = () => installed.map(find).filter(Boolean).map(toItem);
   function itemById(storeId) {
     const e = find(String(storeId).replace(/^store:/, ''));
-    return e && isInstalled(e.id) ? toItem(e) : null;
+    return e && (isInstalled(e.id) || e.system) ? toItem(e) : null;
   }
 
   function changed() {
@@ -6045,7 +6047,7 @@ const AppStore = (function() {
   load();
 
   return { config: cfg, open, openEntry, install, uninstall, launch, addCustomLink, removeCustom, onChange, refresh,
-           catalog, find, isInstalled, installedItems, itemById, installedCount: () => installed.length };
+           catalog: storeCatalog, find, isInstalled, installedItems, itemById, installedCount: () => installed.length };
 })();
 
 /* =====================================================================
@@ -6496,6 +6498,7 @@ function TimerApp(body, ctx) {
    ===================================================================== */
 const FMBridge = { instance: null, pending: null };
 const EditorBridge = { instance: null, pending: null };
+const PVBridge = { instance: null, pending: null };
 
 const FileManagerAPI = {
   show(folderId, selectId, openIt) {
@@ -6521,13 +6524,25 @@ const TextEditorAPI = {
     }
   }
 };
+const PhotoViewerAPI = {
+  show(fileId) {
+    const wid = AppWindows.winId('photo-viewer');
+    if (PVBridge.instance && WindowManager.get(wid) && !WindowManager.isClosed(wid)) {
+      WindowManager.open(wid);
+      if (fileId) PVBridge.instance.open(fileId);
+    } else {
+      PVBridge.pending = fileId || null;
+      AppStore.openEntry('photo-viewer');
+    }
+  }
+};
 const FileOpen = {
   async open(id) {
     try {
       const n = await FileStore.get(id);
       if (!n) return;
       if (n.type === 'folder') return FileManagerAPI.show(n.id);
-      if (FileStore.isImage(n)) return FileManagerAPI.show(n.parent, n.id, true);
+      if (FileStore.isImage(n)) return PhotoViewerAPI.show(n.id);
       if (FileStore.isText(n)) return TextEditorAPI.show(n.id);
       return FileManagerAPI.show(n.parent, n.id, true);
     } catch (e) {
@@ -6540,6 +6555,317 @@ function fsErrorText(e) {
   return (e && e.message) || 'Something went wrong.';
 }
 
+
+/* ---------- Zip support (pure JavaScript, no libraries). Reads stored + deflate zips, writes deflate/stored zips. ---------- */
+const ZipTool = (function() {
+  const MAX_ENTRIES = 5000, MAX_TOTAL = 1024 * 1024 * 1024;   // safety limits against zip bombs
+  const NO_PACK = new Set(["zip","jpg","jpeg","png","gif","webp","avif","mp3","mp4","m4a","webm","ogg","pdf"]);
+  let table = null;
+  function crcTable() {
+    if (table) return table;
+    table = new Uint32Array(256);
+    for (let n = 0; n < 256; n++) { let c = n; for (let k = 0; k < 8; k++) c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1); table[n] = c >>> 0; }
+    return table;
+  }
+  async function crcOf(blob) {
+    const t = crcTable(); let c = 0xFFFFFFFF;
+    for (let off = 0; off < blob.size; off += 1048576) {
+      const u = new Uint8Array(await blob.slice(off, Math.min(blob.size, off + 1048576)).arrayBuffer());
+      for (let i = 0; i < u.length; i++) c = t[(c ^ u[i]) & 255] ^ (c >>> 8);
+    }
+    return (c ^ 0xFFFFFFFF) >>> 0;
+  }
+  const canStream = typeof CompressionStream === "function" && typeof DecompressionStream === "function";
+  const enc = new TextEncoder();
+  function dosStamp(ts) {
+    const d = new Date(ts || Date.now());
+    const y = Math.min(2107, Math.max(1980, d.getFullYear()));
+    return { time: (d.getHours() << 11) | (d.getMinutes() << 5) | (d.getSeconds() >> 1), date: ((y - 1980) << 9) | ((d.getMonth() + 1) << 5) | d.getDate() };
+  }
+  async function deflate(blob) {
+    return new Response(blob.stream().pipeThrough(new CompressionStream("deflate-raw"))).blob();
+  }
+  async function inflate(blob, expected) {
+    const reader = blob.stream().pipeThrough(new DecompressionStream("deflate-raw")).getReader();
+    const parts = []; let total = 0;
+    for (;;) {
+      const r = await reader.read();
+      if (r.done) break;
+      total += r.value.length;
+      if (total > expected) { try { await reader.cancel(); } catch (_) {} throw new Error("A file in the zip is larger than it says. It was not extracted."); }
+      parts.push(r.value);
+    }
+    return new Blob(parts);
+  }
+
+  // items: [{ path, blob (null for a folder), modified }]
+  async function build(items) {
+    if (items.length > 65534) throw new Error("Too many files for one zip.");
+    const parts = [], central = [];
+    let offset = 0;
+    for (const it of items) {
+      const isDir = !it.blob;
+      const name = enc.encode(isDir ? it.path.replace(/\/?$/, "/") : it.path);
+      const raw = it.blob || new Blob([]);
+      const crc = isDir ? 0 : await crcOf(raw);
+      let data = raw, method = 0;
+      if (!isDir && canStream && raw.size > 64 && !NO_PACK.has(FileStore.extOf(it.path))) {
+        try { const z = await deflate(raw); if (z.size < raw.size) { data = z; method = 8; } } catch (_) {}
+      }
+      if (data.size > 0xFFFFFFFE || raw.size > 0xFFFFFFFE || offset > 0xFFFFFFFE) throw new Error("That is too big for a regular zip file (4 GB limit).");
+      const st = dosStamp(it.modified);
+      const lh = new DataView(new ArrayBuffer(30));
+      lh.setUint32(0, 0x04034b50, true); lh.setUint16(4, 20, true); lh.setUint16(6, 0x0800, true); lh.setUint16(8, method, true);
+      lh.setUint16(10, st.time, true); lh.setUint16(12, st.date, true); lh.setUint32(14, crc, true);
+      lh.setUint32(18, data.size, true); lh.setUint32(22, raw.size, true); lh.setUint16(26, name.length, true); lh.setUint16(28, 0, true);
+      parts.push(lh.buffer, name, data);
+      const ch = new DataView(new ArrayBuffer(46));
+      ch.setUint32(0, 0x02014b50, true); ch.setUint16(4, 20, true); ch.setUint16(6, 20, true); ch.setUint16(8, 0x0800, true); ch.setUint16(10, method, true);
+      ch.setUint16(12, st.time, true); ch.setUint16(14, st.date, true); ch.setUint32(16, crc, true);
+      ch.setUint32(20, data.size, true); ch.setUint32(24, raw.size, true); ch.setUint16(28, name.length, true);
+      ch.setUint32(38, isDir ? 0x10 : 0, true); ch.setUint32(42, offset, true);
+      central.push(ch.buffer, name);
+      offset += 30 + name.length + data.size;
+    }
+    let cdSize = 0;
+    central.forEach(p => { cdSize += p.byteLength !== undefined ? p.byteLength : p.length; });
+    const end = new DataView(new ArrayBuffer(22));
+    end.setUint32(0, 0x06054b50, true); end.setUint16(8, items.length, true); end.setUint16(10, items.length, true);
+    end.setUint32(12, cdSize, true); end.setUint32(16, offset, true);
+    return new Blob(parts.concat(central, [end.buffer]), { type: "application/zip" });
+  }
+
+  async function readEntries(blob) {
+    if (blob.size < 22) throw new Error("This doesn't look like a zip file.");
+    const tailLen = Math.min(blob.size, 65557), tailStart = blob.size - tailLen;
+    const tail = new DataView(await blob.slice(tailStart).arrayBuffer());
+    let e = -1;
+    for (let i = tailLen - 22; i >= 0; i--) { if (tail.getUint32(i, true) === 0x06054b50) { e = i; break; } }
+    if (e < 0) throw new Error("This doesn't look like a zip file.");
+    const count = tail.getUint16(e + 10, true), cdSize = tail.getUint32(e + 12, true), cdOff = tail.getUint32(e + 16, true);
+    if (count === 0xFFFF || cdSize === 0xFFFFFFFF || cdOff === 0xFFFFFFFF) throw new Error("Zip files bigger than 4 GB (Zip64) aren't supported.");
+    if (count > MAX_ENTRIES) throw new Error("This zip has too many items (limit " + MAX_ENTRIES + ").");
+    if (cdOff + cdSize > blob.size) throw new Error("This zip file is damaged.");
+    const cd = new DataView(await blob.slice(cdOff, cdOff + cdSize).arrayBuffer());
+    const dec = new TextDecoder("utf-8");
+    const out = []; let p = 0;
+    for (let i = 0; i < count; i++) {
+      if (p + 46 > cd.byteLength || cd.getUint32(p, true) !== 0x02014b50) throw new Error("This zip file is damaged.");
+      const flags = cd.getUint16(p + 8, true), method = cd.getUint16(p + 10, true), crc = cd.getUint32(p + 16, true);
+      const csize = cd.getUint32(p + 20, true), usize = cd.getUint32(p + 24, true);
+      const nl = cd.getUint16(p + 28, true), xl = cd.getUint16(p + 30, true), cl = cd.getUint16(p + 32, true), lo = cd.getUint32(p + 42, true);
+      const name = dec.decode(new Uint8Array(cd.buffer, cd.byteOffset + p + 46, nl));
+      out.push({ name, flags, method, crc, csize, usize, offset: lo });
+      p += 46 + nl + xl + cl;
+    }
+    return out;
+  }
+  async function entryBlob(blob, ent) {
+    const lh = new DataView(await blob.slice(ent.offset, ent.offset + 30).arrayBuffer());
+    if (lh.byteLength < 30 || lh.getUint32(0, true) !== 0x04034b50) throw new Error("This zip file is damaged.");
+    const start = ent.offset + 30 + lh.getUint16(26, true) + lh.getUint16(28, true);
+    if (start + ent.csize > blob.size) throw new Error("This zip file is damaged.");
+    const packed = blob.slice(start, start + ent.csize);
+    let data;
+    if (ent.method === 0) data = packed;
+    else if (ent.method === 8 && canStream) data = await inflate(packed, ent.usize);
+    else throw new Error("unsupported");
+    if (data.size !== ent.usize || (await crcOf(data)) !== ent.crc) throw new Error("A file inside the zip is damaged.");
+    return data;
+  }
+  // "../x", "/x", "a\\b" etc. -> safe list of folder/file names (or null to skip)
+  function safeParts(name) {
+    const parts = String(name).replace(/\\/g, "/").split("/").filter(x => x && x !== ".");
+    if (!parts.length || parts.some(x => x === "..")) return null;
+    const clean = parts.map(x => FileStore.cleanName(x));
+    return clean.some(x => !x) ? null : clean;
+  }
+  return { build, readEntries, entryBlob, safeParts, MAX_TOTAL };
+})();
+
+/* ---------- Photo Viewer (opens images from File Manager) ---------- */
+function PhotoViewerApp(body, ctx) {
+  const S = FileStore;
+  let cur = null, siblings = [], url = null, disposed = false;
+  let scale = 1, tx = 0, ty = 0, fitMode = true, nw = 0, nh = 0, openToken = 0;
+
+  body.innerHTML = `
+    <div class="pv-root">
+      <div class="fm-bar">
+        <button type="button" class="fm-ibtn" data-a="prev" title="Previous picture in this folder (Left arrow)">◀ Prev</button>
+        <button type="button" class="fm-ibtn" data-a="next" title="Next picture in this folder (Right arrow)">Next ▶</button>
+        <span class="fm-sepv"></span>
+        <button type="button" class="fm-ibtn" data-a="out" title="Zoom out (-)">−</button>
+        <button type="button" class="fm-ibtn" data-a="in" title="Zoom in (+)">+</button>
+        <button type="button" class="fm-ibtn" data-a="fit" title="Fit to window (0)">Fit</button>
+        <button type="button" class="fm-ibtn" data-a="full" title="Actual size (1)">100%</button>
+        <span class="fm-sepv"></span>
+        <button type="button" class="fm-ibtn" data-a="dl" title="Download to your computer">⬇ Download</button>
+        <button type="button" class="fm-ibtn" data-a="show" title="Show in File Manager">🗂️ Show</button>
+        <span class="pv-name"></span>
+      </div>
+      <div class="pv-stage" tabindex="0"><img class="pv-img" alt="" hidden /><div class="pv-msg">Open a picture from File Manager.</div></div>
+      <div class="pv-status"><span class="pv-info"></span><span class="pv-zoom"></span></div>
+    </div>`;
+  const q = s => body.querySelector(s);
+  const stage = q('.pv-stage'), img = q('.pv-img'), msg = q('.pv-msg');
+  const fail = e => AppDialog.alert(body, { title: "Couldn't do that", message: fsErrorText(e) });
+
+  function apply() {
+    img.style.transform = 'translate(' + tx + 'px,' + ty + 'px) scale(' + scale + ')';
+    q('.pv-zoom').textContent = cur && nw ? Math.round(scale * 100) + '%' : '';
+  }
+  function fit() {
+    const w = stage.clientWidth, h = stage.clientHeight;
+    if (!nw || !nh || !w || !h) return;
+    scale = Math.min(w / nw, h / nh, 1);
+    tx = (w - nw * scale) / 2; ty = (h - nh * scale) / 2;
+    fitMode = true; apply();
+  }
+  function zoomAt(factor, cx, cy) {
+    if (!nw) return;
+    const ns = Math.min(32, Math.max(0.05, scale * factor));
+    if (cx == null) { cx = stage.clientWidth / 2; cy = stage.clientHeight / 2; }
+    tx = cx - (cx - tx) * (ns / scale); ty = cy - (cy - ty) * (ns / scale);
+    scale = ns; fitMode = false; apply();
+  }
+  function actual() {
+    if (!nw) return;
+    scale = 1; tx = (stage.clientWidth - nw) / 2; ty = (stage.clientHeight - nh) / 2; fitMode = false; apply();
+  }
+
+  function clearImage(text) {
+    if (url) { URL.revokeObjectURL(url); url = null; }
+    img.hidden = true; img.removeAttribute('src'); nw = nh = 0;
+    msg.textContent = text; msg.hidden = false;
+    q('.pv-name').textContent = ''; q('.pv-info').textContent = ''; apply(); updateButtons();
+  }
+  async function loadSiblings() {
+    if (!cur) { siblings = []; return; }
+    const kids = await S.children(cur.parent);
+    siblings = kids.filter(n => S.isImage(n)).sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base', numeric: true }));
+  }
+  function updateButtons() {
+    const i = cur ? siblings.findIndex(n => n.id === cur.id) : -1;
+    const set = (a, v) => { const b = q('[data-a="' + a + '"]'); if (b) b.disabled = !!v; };
+    set('prev', i < 0 || siblings.length < 2); set('next', i < 0 || siblings.length < 2);
+    ['out', 'in', 'fit', 'full', 'dl', 'show'].forEach(a => set(a, !cur || !nw && a !== 'dl' && a !== 'show'));
+    if (cur) q('.pv-info').textContent = (i >= 0 ? (i + 1) + ' of ' + siblings.length + ' · ' : '') + S.fmtSize(cur.size || 0) + (nw ? ' · ' + nw + ' × ' + nh : '');
+  }
+  async function open(id) {
+    const token = ++openToken;
+    try {
+      const n = await S.get(id);
+      if (token !== openToken || disposed) return;
+      if (!n || n.type !== 'file' || !S.isImage(n)) { cur = null; clearImage('That picture is no longer there.'); return; }
+      const d = await S.readData(id);
+      if (token !== openToken || disposed) return;
+      const type = n.mime || S.mimeFor(n.name);
+      const blob = d instanceof Blob ? (d.type ? d : new Blob([d], { type })) : new Blob([d == null ? '' : d], { type });
+      cur = n;
+      await loadSiblings();
+      if (token !== openToken || disposed) return;
+      const next = URL.createObjectURL(blob);
+      await new Promise(resolve => {
+        img.onload = () => resolve(true);
+        img.onerror = () => resolve(false);
+        img.src = next;
+      }).then(ok => {
+        if (url) URL.revokeObjectURL(url);
+        url = next;
+        if (!ok) { clearImage("Couldn't show this picture. It may be damaged."); cur = n; q('.pv-name').textContent = n.name; updateButtons(); return; }
+        nw = img.naturalWidth || 300; nh = img.naturalHeight || 300;
+        img.hidden = false; msg.hidden = true;
+        img.style.width = nw + 'px'; img.style.height = nh + 'px';
+        ctx.setTitle(n.name);
+        q('.pv-name').textContent = n.name;
+        fit(); updateButtons();
+      });
+    } catch (e) { fail(e); }
+  }
+  function step(dir) {
+    const i = cur ? siblings.findIndex(n => n.id === cur.id) : -1;
+    if (i < 0 || siblings.length < 2) return;
+    open(siblings[(i + dir + siblings.length) % siblings.length].id);
+  }
+  async function download() {
+    if (!cur) return;
+    try {
+      const d = await S.readData(cur.id);
+      const b = d instanceof Blob ? d : new Blob([d == null ? '' : d], { type: cur.mime || S.mimeFor(cur.name) });
+      const u = URL.createObjectURL(b);
+      const a = document.createElement('a'); a.href = u; a.download = cur.name;
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(u), 4000);
+    } catch (e) { fail(e); }
+  }
+
+  body.addEventListener('click', e => {
+    const b = e.target.closest('[data-a]');
+    if (!b || b.disabled) return;
+    const a = b.dataset.a;
+    if (a === 'prev') step(-1); else if (a === 'next') step(1);
+    else if (a === 'in') zoomAt(1.25); else if (a === 'out') zoomAt(1 / 1.25);
+    else if (a === 'fit') fit(); else if (a === 'full') actual();
+    else if (a === 'dl') download();
+    else if (a === 'show' && cur) FileManagerAPI.show(cur.parent, cur.id);
+  });
+  stage.addEventListener('wheel', e => {
+    if (!nw) return;
+    e.preventDefault();
+    const r = stage.getBoundingClientRect();
+    zoomAt(e.deltaY < 0 ? 1.15 : 1 / 1.15, e.clientX - r.left, e.clientY - r.top);
+  }, { passive: false });
+  let drag = null;
+  stage.addEventListener('pointerdown', e => {
+    if (!nw || e.button !== 0) return;
+    drag = { x: e.clientX, y: e.clientY, tx, ty };
+    stage.classList.add('drag'); stage.focus();
+    try { stage.setPointerCapture(e.pointerId); } catch (_) {}
+  });
+  stage.addEventListener('pointermove', e => {
+    if (!drag) return;
+    tx = drag.tx + (e.clientX - drag.x); ty = drag.ty + (e.clientY - drag.y); fitMode = false; apply();
+  });
+  const endDrag = () => { drag = null; stage.classList.remove('drag'); };
+  stage.addEventListener('pointerup', endDrag);
+  stage.addEventListener('pointercancel', endDrag);
+  stage.addEventListener('dblclick', () => { if (!nw) return; if (fitMode && scale < 1) actual(); else fit(); });
+  stage.addEventListener('keydown', e => {
+    if (e.key === 'ArrowLeft') { e.preventDefault(); step(-1); }
+    else if (e.key === 'ArrowRight') { e.preventDefault(); step(1); }
+    else if (e.key === '+' || e.key === '=') zoomAt(1.25);
+    else if (e.key === '-') zoomAt(1 / 1.25);
+    else if (e.key === '0') fit();
+    else if (e.key === '1') actual();
+  });
+  let ro = null;
+  if (typeof ResizeObserver === 'function') { ro = new ResizeObserver(() => { if (fitMode && nw) fit(); }); ro.observe(stage); }
+
+  ctx.onClose(() => {
+    disposed = true;
+    if (ro) ro.disconnect();
+    if (url) { URL.revokeObjectURL(url); url = null; }
+    if (PVBridge.instance === api) PVBridge.instance = null;
+  });
+  ctx.onClose(S.onChange(async () => {
+    if (disposed || !cur) return;
+    try {
+      const n = await S.get(cur.id);
+      if (!n) { cur = null; siblings = []; clearImage('This picture was deleted.'); return; }
+      cur = n; await loadSiblings(); updateButtons();
+    } catch (_) {}
+  }));
+  const api = { open };
+  PVBridge.instance = api;
+  updateButtons();
+  S.ready().then(() => {
+    const pending = PVBridge.pending;
+    PVBridge.pending = null;
+    if (pending) open(pending);
+  });
+}
+
 /* ---------- File Manager ---------- */
 function FileManagerApp(body, ctx) {
   const S = FileStore;
@@ -6549,7 +6875,8 @@ function FileManagerApp(body, ctx) {
   let sortKey = 'name', sortDir = 1, filter = '';
   let nodes = [];
   let clip = null;
-  let refreshTimer = null, disposed = false;
+  let refreshTimer = null, disposed = false, busy = false;
+  const isZip = n => !!n && n.type === 'file' && S.extOf(n.name) === 'zip';
 
   body.innerHTML = `
     <div class="fm-root">
@@ -6571,6 +6898,8 @@ function FileManagerApp(body, ctx) {
         <button type="button" class="fm-ibtn" data-a="paste">📋 Paste</button>
         <button type="button" class="fm-ibtn" data-a="rename">✏️ Rename</button>
         <button type="button" class="fm-ibtn" data-a="download">⬇ Download</button>
+        <button type="button" class="fm-ibtn" data-a="zip" title="Put the selected items in a .zip file">🗜️ Zip</button>
+        <button type="button" class="fm-ibtn" data-a="unzip" title="Extract the selected .zip file into a new folder">📤 Extract</button>
         <button type="button" class="fm-ibtn" data-a="delete">🗑 Delete</button>
       </div>
       <div class="fm-main">
@@ -6672,6 +7001,8 @@ function FileManagerApp(body, ctx) {
     dis('cut', !sel.length); dis('copy', !sel.length); dis('delete', !sel.length);
     dis('download', !sel.some(n => n.type === 'file'));
     dis('paste', !clip || atRoot());
+    dis('zip', !sel.length || atRoot() || busy);
+    dis('unzip', !(sel.length === 1 && isZip(sel[0])) || atRoot() || busy);
   }
   async function refresh() {
     if (disposed) return;
@@ -6748,9 +7079,97 @@ function FileManagerApp(body, ctx) {
   function openNode(n) {
     if (!n) return;
     if (n.type === 'folder') { go(n.id); return; }
-    if (S.isImage(n) || /^(audio|video)\//.test(n.mime || '')) { preview(n); return; }
+    if (S.isImage(n)) { PhotoViewerAPI.show(n.id); return; }
+    if (/^(audio|video)\//.test(n.mime || '')) { preview(n); return; }
+    if (S.extOf(n.name) === 'zip') { zipOpen(n); return; }
     if (S.isText(n)) { TextEditorAPI.show(n.id); return; }
     download(n);
+  }
+
+  /* ----- zip: compress / extract ----- */
+  function working(text) {
+    busy = !!text;
+    if (text) q('.fm-st-a').textContent = text; else renderStatus();
+    updateButtons();
+  }
+  async function collect(node, prefix, out, guard) {
+    const path = prefix + node.name;
+    if (out.length > 5000) throw new Error('That is too many files for one zip (limit 5000).');
+    if (node.type === 'folder') {
+      out.push({ path, blob: null, modified: node.modified });
+      for (const c of await S.children(node.id)) await collect(c, path + '/', out, guard);
+    } else {
+      out.push({ path, blob: await blobOf(node), modified: node.modified });
+    }
+  }
+  async function zipSel() {
+    const sel = selNodes();
+    if (!sel.length || atRoot() || busy) return;
+    const def = sel.length === 1 ? sel[0].name.replace(/\.[^.]*$/, '') + '.zip' : 'Archive.zip';
+    const name = await AppDialog.prompt(body, { title: 'Create zip', message: 'Name of the new zip file:', value: def, selectBase: true, okLabel: 'Create' });
+    if (name === null) return;
+    working('Creating zip…');
+    try {
+      const items = [];
+      for (const n of sel) await collect(n, '', items);
+      const blob = await ZipTool.build(items);
+      const zname = /\.zip$/i.test(name.trim()) ? name.trim() : name.trim() + '.zip';
+      const f = await S.createFile({ name: zname, parent: folderId, data: blob, mime: 'application/zip' });
+      selected = new Set([f.id]);
+      if (typeof Notify !== 'undefined') Notify.push({ title: 'Zip created', body: f.name + ' (' + S.fmtSize(blob.size) + ')', icon: '🗜️' });
+    } catch (e) { fail(e); }
+    working(''); await refresh();
+  }
+  async function unzip(n, openAfter) {
+    if (!isZip(n) || atRoot() || busy) return;
+    working('Extracting…');
+    let skipped = 0, made = 0, folder = null;
+    try {
+      const blob = await blobOf(n);
+      const entries = await ZipTool.readEntries(blob);
+      if (entries.some(en => en.flags & 1)) throw new Error('This zip is password protected, which isn’t supported.');
+      folder = await S.createFolder({ name: n.name.replace(/\.zip$/i, '') || 'Extracted', parent: folderId });
+      const dirs = new Map([['', folder.id]]);
+      const ensureDir = async parts => {
+        let key = '', parent = folder.id;
+        for (const part of parts) {
+          key += '/' + part;
+          if (!dirs.has(key)) dirs.set(key, (await S.createFolder({ name: part, parent })).id);
+          parent = dirs.get(key);
+        }
+        return parent;
+      };
+      let total = 0;
+      for (const en of entries) {
+        const parts = ZipTool.safeParts(en.name);
+        if (!parts) { skipped++; continue; }
+        if (/\/$/.test(en.name.replace(/\\/g, '/'))) { await ensureDir(parts); continue; }
+        total += en.usize;
+        if (total > ZipTool.MAX_TOTAL) throw new Error('This zip would unpack to more than 1 GB, so it was stopped.');
+        let data;
+        try { data = await ZipTool.entryBlob(blob, en); }
+        catch (e) { if (e && e.message === 'unsupported') { skipped++; continue; } throw e; }
+        const fname = parts.pop();
+        const parent = await ensureDir(parts);
+        const textual = S.isText({ type: 'file', name: fname, mime: '' });
+        const mime = textual || S.mimeFor(fname) !== 'text/plain' ? S.mimeFor(fname) : 'application/octet-stream';
+        await S.createFile({ name: fname, parent, data, mime });
+        made++;
+      }
+      if (typeof Notify !== 'undefined') Notify.push({ title: 'Extracted ' + n.name, body: made + ' file' + (made === 1 ? '' : 's') + ' extracted' + (skipped ? ', ' + skipped + ' skipped' : '') + '.', icon: '📤' });
+      working('');
+      if (openAfter && folder) { await go(folder.id); return; }
+      selected = new Set(folder ? [folder.id] : []);
+    } catch (e) {
+      if (folder) { try { await S.remove(folder.id); } catch (_) {} }   // don't leave a half-extracted folder behind
+      fail(e);
+    }
+    working(''); await refresh();
+  }
+  async function zipOpen(n) {
+    const pick = await AppDialog.choice(body, { title: n.name, message: 'What would you like to do with this zip file?',
+      buttons: [{ label: 'Cancel', value: null }, { label: 'Download', value: 'dl' }, { label: 'Extract here', value: 'x', primary: true }] });
+    if (pick === 'x') unzip(n, true); else if (pick === 'dl') download(n);
   }
 
   async function newFolder() {
@@ -6837,6 +7256,8 @@ function FileManagerApp(body, ctx) {
     else if (a === 'rename') renameSel();
     else if (a === 'download') selNodes().filter(n => n.type === 'file').forEach(download);
     else if (a === 'delete') deleteSel();
+    else if (a === 'zip') zipSel();
+    else if (a === 'unzip') unzip(selNodes()[0]);
   });
   q('.fm-file').addEventListener('change', e => { upload(e.target.files); e.target.value = ''; });
   q('.fm-search').addEventListener('input', e => { filter = e.target.value; renderList(); renderStatus(); });
@@ -6885,6 +7306,7 @@ function FileManagerApp(body, ctx) {
       const items = [];
       if (one) items.push({ icon: '📂', label: 'Open', onClick: () => openNode(one) });
       if (one && one.type === 'file') items.push({ icon: '📝', label: 'Edit in Text Editor', onClick: () => TextEditorAPI.show(one.id) });
+      if (one && isZip(one)) items.push({ icon: '📤', label: 'Extract to new folder', disabled: atRoot(), onClick: () => unzip(one) });
       if (items.length) items.push({ separator: true });
       items.push({ icon: '✂️', label: 'Cut', onClick: () => setClip('cut') });
       items.push({ icon: '⧉', label: 'Copy', onClick: () => setClip('copy') });
@@ -6893,6 +7315,7 @@ function FileManagerApp(body, ctx) {
       if (one) items.push({ icon: '✏️', label: 'Rename', onClick: renameSel });
       items.push({ icon: '🗐', label: 'Duplicate', onClick: duplicateSel });
       items.push({ icon: '📦', label: 'Move to…', onClick: moveSel });
+      items.push({ icon: '🗜️', label: 'Add to zip…', disabled: atRoot(), onClick: zipSel });
       if (sel.some(n => n.type === 'file')) items.push({ icon: '⬇️', label: 'Download', onClick: () => sel.filter(n => n.type === 'file').forEach(download) });
       items.push({ separator: true });
       items.push({ icon: '🗑️', label: 'Delete', onClick: deleteSel });
