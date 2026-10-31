@@ -28,7 +28,7 @@ It is undetectable and un-seeable by all monitering systems in browsers, interne
 
 -A cross-device chat feature, with a profanity filter.
 
--A actual File Manager bundled with a working text editor.
+-A actual File Manager bundled with a working text editor, working image viewer and working zipper.
 
 -A full on Windows 11 Context menu with lots of options.
 
