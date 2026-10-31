@@ -3,7 +3,7 @@
 
 // To publish an update: change CONSOLE_OS_VERSION (higher number), optionally write what changed in
 
-var CONSOLE_OS_VERSION = "2026.10.34";
+var CONSOLE_OS_VERSION = "2026.10.35";
 var CONSOLE_OS_UPDATE_NOTES = "File Manager can now zip and extract files, images open in a new Photo Viewer, and File Manager and Text Editor no longer appear in the Appstore.";
 var CONSOLE_OS_UPDATE_URL = "https://raw.githubusercontent.com/SolsticeHz/HTML-Console-OS/refs/heads/main/Console_OS.html";
 (function () {
@@ -1220,6 +1220,7 @@ fullscreen-portal {
 .pv-stage.drag { cursor: grabbing; }
 .pv-img { position: absolute; left: 0; top: 0; transform-origin: 0 0; max-width: none; user-select: none; -webkit-user-drag: none; }
 .pv-msg { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: var(--text-muted); font-size: 13px; text-align: center; padding: 20px; pointer-events: none; }
+.pv-msg[hidden], .pv-img[hidden] { display: none !important; }
 .pv-name { margin-left: auto; font-size: 12px; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
 .pv-status { display: flex; justify-content: space-between; gap: 10px; padding: 4px 10px; font-size: 11px; color: var(--text-muted); border-top: 1px solid var(--line); background: var(--surface-3); }
 .te-root { display: flex; flex-direction: column; height: 100%; min-height: 0; }
