@@ -1,10 +1,10 @@
 <!DOCTYPE html><html lang="en" data-theme="dark"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/><title>New Tab</title>
 <script>
 
-// To publish an update: change CONSOLE_OS_VERSION (higher number), optionally write what changed in
+// To publish an update: change CONSOLE_OS_VERSION (higher number)
 
-var CONSOLE_OS_VERSION = "2026.10.35";
-var CONSOLE_OS_UPDATE_NOTES = "File Manager can now zip and extract files, images open in a new Photo Viewer, and File Manager and Text Editor no longer appear in the Appstore.";
+var CONSOLE_OS_VERSION = "2026.11.2";
+var CONSOLE_OS_UPDATE_NOTES = "Fixed dragging shortcut icons into desktop folders: the dragged icon now stays above open folder windows, and you can drop it onto an open folder window as well as the folder icon.";
 var CONSOLE_OS_UPDATE_URL = "https://raw.githubusercontent.com/SolsticeHz/HTML-Console-OS/refs/heads/main/Console_OS.html";
 (function () {
   try {
@@ -23,7 +23,7 @@ var CONSOLE_OS_UPDATE_URL = "https://raw.githubusercontent.com/SolsticeHz/HTML-C
     var c = cmp(pl.version, CONSOLE_OS_VERSION);
     if (c < 0) { localStorage.removeItem(PAYLOAD); return; }
     if (c === 0) {
-      // This file is already that version, so the stored copy is a duplicate. Free it (but not while running inside the update's own frame).
+
       if (location.href !== 'about:srcdoc') { localStorage.removeItem(PAYLOAD); localStorage.removeItem(TRIAL); }
       return;
     }
@@ -36,7 +36,7 @@ var CONSOLE_OS_UPDATE_URL = "https://raw.githubusercontent.com/SolsticeHz/HTML-C
     }
     localStorage.setItem(TRIAL, JSON.stringify({ version: pl.version, n: tries + 1, ts: Date.now() }));
     try { sessionStorage.setItem('consoleos_swapped', pl.version); } catch (e) {}
-    // Run the installed update in a full-screen frame (a clean script scope) and tell the rest of this file to stand down.
+
     window.__cosSwapping = true;
     var f = document.createElement('iframe');
     f.id = 'cosRunner';
@@ -218,6 +218,8 @@ html, body {
   border-color: var(--accent-color);
   box-shadow: 0 0 14px var(--accent-color);
 }
+#desktop.icon-dragging { z-index: auto; }
+.win11-window.drop-target { box-shadow: 0 0 0 3px var(--accent-color), 0 0 24px var(--accent-color); }
 .desktop-icon .icon-img {
   font-size: var(--icon-emoji, 38px);
   margin-bottom: 6px;
@@ -1215,6 +1217,11 @@ fullscreen-portal {
 .fm-prev-box img, .fm-prev-box video { max-width: 100%; max-height: 60vh; border-radius: 6px; }
 .fm-prev-box audio { width: 100%; }
 
+.rn-root { display: flex; flex-direction: column; height: 100%; min-height: 0; }
+.rn-frame { flex: 1; min-height: 0; width: 100%; border: 0; display: block; background: #fff; }
+.rn-msg { flex: 1; display: flex; align-items: center; justify-content: center; padding: 20px; text-align: center; color: var(--text-muted); font-size: 13px; }
+.rn-msg[hidden], .rn-frame[hidden] { display: none; }
+.rn-note { margin-left: auto; font-size: 11px; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
 .pv-root { display: flex; flex-direction: column; height: 100%; min-height: 0; }
 .pv-stage { flex: 1; min-height: 0; position: relative; overflow: hidden; background: repeating-conic-gradient(rgba(128,128,128,.14) 0% 25%, transparent 0% 50%) 50% / 20px 20px; cursor: grab; touch-action: none; }
 .pv-stage.drag { cursor: grabbing; }
@@ -1241,7 +1248,7 @@ fullscreen-portal {
 @media (prefers-reduced-motion: reduce) { .toast, .toast.out { animation: none; } #thumbCard { transition: none; } }
 </style></head><body>
 
-<div id="desktop" aria-label="Windows 11 Desktop"></div>
+<div id="desktop" aria-label="Nexus Desktop"></div>
 
 <div id="settingsWindow" class="win11-window minimized" aria-label="Settings Window">
   <div class="win-titlebar" id="settingsTitleBar">
@@ -1317,7 +1324,7 @@ fullscreen-portal {
 <div id="searchFlyout" aria-label="Search Flyout">
   <div class="search-flyout-header">
     <span id="searchFlyoutTitle">Top Apps & Games</span>
-    <span style="font-size: 11px; color: var(--text-muted);">Windows Search</span>
+    <span style="font-size: 11px; color: var(--text-muted);">Nexus Search</span>
   </div>
   <div class="search-flyout-results" id="searchResultsContainer">
     <!-- Dynamic search results populated by JS -->
@@ -1359,12 +1366,12 @@ fullscreen-portal {
 <div id="startMenu" aria-label="Start Menu">
   <div class="start-header">
     <span>Pinned Apps & Game Hubs</span>
-    <span style="font-size: 12px; color: var(--text-muted);">Windows 11 Start</span>
+    <span style="font-size: 12px; color: var(--text-muted);">Nexus Start</span>
   </div>
   <div class="start-body">
     <div class="info-bubble">
       <h2>If websites get blocked, turn off and on again. May lag on low battery or many tabs open.</h2>
-      <p>Request websites or scratch games to be added with me in person or with my email: PixilsOhYea@protonnail.com</p>
+      <p>Request websites or scratch games to be added with me in person or with my email: PixilsOhYea@protonmail.com</p>
     </div>
 
     <div id="startMenuGroups" style="display: flex; flex-direction: column; gap: 24px;"></div>
@@ -1406,7 +1413,7 @@ fullscreen-portal {
 
 <fullscreen-portal id="gamePortal"></fullscreen-portal>
 
-<script>if (window.__cosSwapping) throw new Error("Console OS: running an installed update instead of this file");
+<script>if (window.__cosSwapping) throw new Error("Nexus OS: running an installed update instead of this file");
 
 /* ===================================================
    Profanity filter (modular)
@@ -1831,7 +1838,7 @@ const ProfanityFilter = (function() {
 <script>
 "use strict";
 
-if (window.__cosSwapping) throw new Error("Console OS: running an installed update instead of this file");
+if (window.__cosSwapping) throw new Error("Nexus OS: running an installed update instead of this file");
 const LS_KEYS = {
   settings: "win11_desktop_settings",
   chat: "win11_chat_history_store_v2",
@@ -2247,7 +2254,7 @@ const WallpaperTools = (function() {
 })();
 
 const DataBackup = (function() {
-  const APP_NAME = "Console OS";
+  const APP_NAME = "Nexus OS";
   const FORMAT = 1;
   const PREFIX = "win11_";
   const EXCLUDE = [LS_KEYS.chat, "win11_chat_cleared_at_v1", "win11_chat_user_id_v1"];
@@ -2285,8 +2292,8 @@ const DataBackup = (function() {
   function parse(text) {
     let obj;
     try { obj = JSON.parse(text); } catch (e) { return { error: "That file isn't a valid backup (it couldn't be read as JSON)." }; }
-    if (!obj || obj.app !== APP_NAME || obj.format !== FORMAT || !obj.data || typeof obj.data !== "object") {
-      return { error: "That file isn't a Console OS backup." };
+    if (!obj || (obj.app !== APP_NAME && obj.app !== "Console OS") || obj.format !== FORMAT || !obj.data || typeof obj.data !== "object") {
+      return { error: "That file isn't a Nexus OS backup." };
     }
     const data = {};
     let count = 0;
@@ -2704,7 +2711,7 @@ SettingsManager.registerTab({
       <div class="settings-card" style="flex-direction: row; justify-content: space-between; align-items: center;">
         <div>
           <div class="settings-card-header">Reset Desktop Background</div>
-          <div class="settings-card-desc">Restore the original Windows 11 Game Portal wallpaper.</div>
+          <div class="settings-card-desc">Restore the original Nexus OS Game Portal wallpaper.</div>
         </div>
         <button id="btnResetSettings" class="settings-btn settings-btn-secondary">Reset to Default</button>
       </div>
@@ -3040,7 +3047,7 @@ SettingsManager.registerTab({
     container.innerHTML = `
       <div class="settings-section-title">Updates</div>
       <div class="settings-card">
-        <div class="settings-card-header">Console OS version</div>
+        <div class="settings-card-header">Nexus OS version</div>
         <div class="settings-row"><span style="color: var(--text-muted);">Installed:</span><span>${esc(CONSOLE_OS_VERSION)}${U.isInstalledUpdate() ? " (installed update)" : ""}</span></div>
         <div class="settings-row"><span style="color: var(--text-muted);">Last checked:</span><span id="upLast">${esc(lastTxt)}</span></div>
         <div class="settings-row"><span style="color: var(--text-muted);">Status:</span><span id="upStatus">${avail ? "Version " + esc(avail.version) + " is available" : "You're up to date"}</span></div>
@@ -3053,7 +3060,7 @@ SettingsManager.registerTab({
       </div>
       <div class="settings-card">
         <div class="settings-card-header">Update source</div>
-        <div class="settings-card-desc">The web address Console OS checks for new versions. It checks when it starts and every 20 minutes. When a newer version is found, a notification stays on screen until you update. Updating keeps all your settings, files and apps.</div>
+        <div class="settings-card-desc">The web address Nexus OS checks for new versions. It checks when it starts and every 20 minutes. When a newer version is found, a notification stays on screen until you update. Updating keeps all your settings, files and apps.</div>
         <div class="settings-input-group">
           <input type="url" id="upUrl" class="settings-input" placeholder="https://…/Console_OS.html" value="${esc(U.sourceUrl())}" readonly />
         </div>
@@ -3082,13 +3089,13 @@ SettingsManager.registerTab({
   icon: "ℹ️",
   render: function(container) {
     container.innerHTML = `
-      <div class="settings-section-title">About Windows Nexus Shift: Game Portal</div>
+      <div class="settings-section-title">About Nexus OS: Game Portal</div>
 
       <div class="settings-card">
         <div class="settings-card-header">System Specifications</div>
         <div class="settings-row">
           <span style="color: var(--text-muted);">OS Name:</span>
-          <span>Windows Nexus Shift: Web Edition</span>
+          <span>Nexus OS: Web Edition</span>
         </div>
         <div class="settings-row">
           <span style="color: var(--text-muted);">Version:</span>
@@ -3100,7 +3107,7 @@ SettingsManager.registerTab({
         </div>
         <div class="settings-row">
           <span style="color: var(--text-muted);">Support Contact:</span>
-          <span>PixilsOhYea@protonnail.com</span>
+          <span>PixilsOhYea@protonmail.com</span>
         </div>
       </div>
 
@@ -3117,7 +3124,7 @@ SettingsManager.registerTab({
 
 <script>
 "use strict";
-if (window.__cosSwapping) throw new Error("Console OS: running an installed update instead of this file");
+if (window.__cosSwapping) throw new Error("Nexus OS: running an installed update instead of this file");
 
 const FileStore = (function() {
   const DB_NAME = "console_os_files_v1";
@@ -3556,7 +3563,7 @@ const FilePicker = (function() {
 
 <script>
 "use strict";
-if (window.__cosSwapping) throw new Error("Console OS: running an installed update instead of this file");
+if (window.__cosSwapping) throw new Error("Nexus OS: running an installed update instead of this file");
 const $ = id => document.getElementById(id);
 
 let lastContextAt = 0;
@@ -4262,6 +4269,7 @@ const WindowManager = (function() {
   return {
     register, open, minimize, close, toggleMax, focus, destroy, setTitle,
     activate, byItem, renderWindows,
+    topZ: () => zTop,
     get: id => wins.get(id),
     isFocused: id => focusedId === id,
     isClosed: id => { const w = wins.get(id); return !w || w.state === 'closed'; },
@@ -4722,8 +4730,22 @@ const Desktop = (function() {
     }
     return null;
   }
+  // What a dragged icon would be dropped into: an open folder window under the pointer, else a folder icon on the desktop.
+  function dropTarget(cx, cy, exceptId) {
+    let stack = [];
+    try { stack = document.elementsFromPoint(cx, cy); } catch (_) {}
+    for (const n of stack) {
+      const w = n.closest && n.closest('.win11-window');
+      if (!w) continue;
+      const f = layout.folders.find(x => folderWinId(x.id) === w.id);
+      if (f && f.id !== exceptId) return { folderId: f.id, node: w };
+      break;   // some other window is on top at this point
+    }
+    const icon = folderAt(cx, cy, exceptId);
+    return icon ? { folderId: icon.dataset.id, node: icon } : null;
+  }
   function clearHighlight() {
-    el.querySelectorAll('.drop-target').forEach(n => n.classList.remove('drop-target'));
+    document.querySelectorAll('.drop-target').forEach(n => n.classList.remove('drop-target'));
   }
 
   function attach(d, it) {
@@ -4765,6 +4787,10 @@ const Desktop = (function() {
         if (timer && Math.hypot(e.clientX - sx, e.clientY - sy) > 8) cancelHold();
         return;
       }
+      if (!dragging) {
+        el.classList.add('icon-dragging');
+        d.style.zIndex = String(WindowManager.topZ() + 1);
+      }
       dragging = true;
       const dr = el.getBoundingClientRect();
       let x = e.clientX - dr.left - offX;
@@ -4777,8 +4803,8 @@ const Desktop = (function() {
       d.style.top = y + 'px';
       clearHighlight();
       if (canNest(it)) {
-        const t = folderAt(e.clientX, e.clientY, it.id);
-        if (t) t.classList.add('drop-target');
+        const t = dropTarget(e.clientX, e.clientY, it.id);
+        if (t) t.node.classList.add('drop-target');
       }
     });
 
@@ -4787,6 +4813,8 @@ const Desktop = (function() {
       cancelHold();
       const wasDragging = dragging, wasReady = ready;
       d.classList.remove('drag-ready', 'dragging');
+      el.classList.remove('icon-dragging');
+      d.style.zIndex = '';
       clearHighlight();
       try { d.releasePointerCapture(pid); } catch (_) {}
       pid = null; ready = false; dragging = false;
@@ -4823,8 +4851,8 @@ const Desktop = (function() {
 
   function finishDrag(d, it, cx, cy, cancelled) {
     if (!cancelled && canNest(it)) {
-      const t = folderAt(cx, cy, it.id);
-      if (t) { moveToFolder(it.id, t.dataset.id); return; }
+      const t = dropTarget(cx, cy, it.id);
+      if (t) { moveToFolder(it.id, t.folderId); return; }
     }
     let x = parseFloat(d.style.left) || 0;
     let y = parseFloat(d.style.top) || 0;
@@ -5751,7 +5779,7 @@ window.addEventListener('DOMContentLoaded', () => {
 </script>
 <script>
 "use strict";
-if (window.__cosSwapping) throw new Error("Console OS: running an installed update instead of this file");
+if (window.__cosSwapping) throw new Error("Nexus OS: running an installed update instead of this file");
 /* =====================================================================
    APPSTORE  -  everything the store needs lives in this one <script>.
 
@@ -6016,6 +6044,7 @@ const AppStore = (function() {
   function uninstall(id) {
     installed = installed.filter(x => x !== id);
     AppWindows.close(id);
+    if (id === 'timer' && typeof TimerService !== 'undefined') TimerService.reset();
     clearData(id);
     if (typeof Desktop !== 'undefined') Desktop.removeShortcut('store:' + id);
     changed();
@@ -6395,8 +6424,83 @@ function CalculatorApp(body, ctx) {
   show();
 }
 
-/* ---------- Stopwatch & Timer ---------- */
+/* ---------- Stopwatch & Timer ----------
+   The stopwatch and countdown live in TimerService, outside the window, so closing the Timer
+   window no longer cancels a running countdown. The alarm and "Time's up" notification still fire. */
+const TimerService = (function() {
+  const DEFAULT_MS = 300000;
+  const sw = { elapsed: 0, start: 0, running: false, laps: [] };
+  const tm = { remaining: DEFAULT_MS, end: 0, running: false, done: false, paused: false, total: DEFAULT_MS, min: '5', sec: '0' };
+  const subs = [];
+  let tick = null;
+
+  const swNow = () => sw.elapsed + (sw.running ? performance.now() - sw.start : 0);
+  const tmLeft = () => tm.running ? Math.max(0, tm.end - performance.now()) : tm.remaining;
+  const tmInput = () => Math.max(0, (parseInt(tm.min, 10) || 0) * 60000 + Math.min(59, parseInt(tm.sec, 10) || 0) * 1000);
+  const words = ms => {
+    const t = Math.round(ms / 1000), m = Math.floor(t / 60), r = t % 60;
+    return ((m ? m + ' min' : '') + (m && r ? ' ' : '') + (r ? r + ' sec' : '')) || '0 sec';
+  };
+  function emit() { subs.slice().forEach(fn => { try { fn(); } catch (_) {} }); }
+  function syncLoop() {
+    const need = sw.running || tm.running;
+    if (need && !tick) tick = setInterval(onTick, 50);
+    else if (!need && tick) { clearInterval(tick); tick = null; }
+  }
+  function timesUp() {
+    Sounds.alarm();
+    if (typeof Notify !== 'undefined') Notify.push({ title: "Time's up!", body: 'Your ' + words(tm.total) + ' timer has finished.', icon: '⏱️', appId: 'store:timer', timeout: 10000 });
+  }
+  function onTick() {
+    if (tm.running && tm.end - performance.now() <= 0) { tm.running = false; tm.done = true; tm.remaining = 0; tm.paused = false; timesUp(); }
+    emit();
+    syncLoop();
+  }
+
+  return {
+    subscribe(fn) { subs.push(fn); return () => { const i = subs.indexOf(fn); if (i >= 0) subs.splice(i, 1); }; },
+    state() {
+      return {
+        sw: { now: swNow(), elapsed: sw.elapsed, running: sw.running, laps: sw.laps.slice() },
+        tm: { left: tmLeft(), running: tm.running, done: tm.done, min: tm.min, sec: tm.sec }
+      };
+    },
+    swToggle() {
+      if (sw.running) { sw.elapsed += performance.now() - sw.start; sw.running = false; }
+      else { sw.start = performance.now(); sw.running = true; }
+      syncLoop(); emit();
+    },
+    swLap() { if (sw.running) { sw.laps.push(swNow()); emit(); } },
+    swReset() { sw.elapsed = 0; sw.running = false; sw.laps = []; syncLoop(); emit(); },
+    setInputs(min, sec) {
+      tm.min = String(min); tm.sec = String(sec);
+      if (!tm.running && !tm.done) tm.remaining = tmInput();
+      emit();
+    },
+    tmToggle() {
+      if (tm.running) { tm.remaining = Math.max(0, tm.end - performance.now()); tm.running = false; tm.paused = true; }
+      else {
+        if (tm.done || tm.remaining <= 0) { tm.done = false; tm.remaining = tmInput(); tm.paused = false; }
+        if (tm.remaining > 0) {
+          if (!tm.paused) tm.total = tm.remaining;
+          tm.paused = false;
+          tm.end = performance.now() + tm.remaining; tm.running = true;
+        }
+      }
+      syncLoop(); emit();
+    },
+    tmReset() { tm.running = false; tm.done = false; tm.paused = false; tm.remaining = tmInput(); syncLoop(); emit(); },
+    // Used when the Timer app is uninstalled: stop everything and go back to defaults.
+    reset() {
+      sw.elapsed = 0; sw.running = false; sw.laps = [];
+      tm.remaining = DEFAULT_MS; tm.running = false; tm.done = false; tm.paused = false; tm.total = DEFAULT_MS; tm.min = '5'; tm.sec = '0';
+      syncLoop(); emit();
+    }
+  };
+})();
+
 function TimerApp(body, ctx) {
+  const T = TimerService;
   body.innerHTML = `
     <div class="tm-root">
       <div class="as-top"><div class="as-tabs">
@@ -6426,72 +6530,45 @@ function TimerApp(body, ctx) {
     </div>`;
   const q = s => body.querySelector(s);
   const pad = (n, l = 2) => String(Math.floor(n)).padStart(l, '0');
+  const swFmt = ms => `${pad(ms / 60000)}:${pad((ms / 1000) % 60)}.${pad((ms % 1000) / 10)}`;
+  const tmFmt = ms => { const s = Math.ceil(ms / 1000); return `${pad(s / 60)}:${pad(s % 60)}`; };
 
   body.querySelectorAll('.as-tab').forEach(t => t.addEventListener('click', () => {
     body.querySelectorAll('.as-tab').forEach(x => x.classList.toggle('active', x === t));
     body.querySelectorAll('.tm-pane').forEach(p => { p.style.display = p.dataset.pane === t.dataset.pane ? '' : 'none'; });
   }));
 
-  // Stopwatch
-  let swElapsed = 0, swStart = 0, swRunning = false, laps = [];
-  const swNow = () => swElapsed + (swRunning ? performance.now() - swStart : 0);
-  const swFmt = ms => `${pad(ms / 60000)}:${pad((ms / 1000) % 60)}.${pad((ms % 1000) / 10)}`;
-  function swRender() {
-    q('.sw-display').textContent = swFmt(swNow());
-    q('.sw-start').textContent = swRunning ? 'Stop' : (swElapsed ? 'Resume' : 'Start');
-    q('.tm-laps').innerHTML = laps.map((l, i) => `<div class="tm-lap"><span>Lap ${laps.length - i}</span><span>${swFmt(l)}</span></div>`).reverse().join('');
-  }
-  q('.sw-start').addEventListener('click', () => {
-    if (swRunning) { swElapsed += performance.now() - swStart; swRunning = false; }
-    else { swStart = performance.now(); swRunning = true; }
-    swRender();
-  });
-  q('.sw-lap').addEventListener('click', () => { if (swRunning) { laps.push(swNow()); swRender(); } });
-  q('.sw-reset').addEventListener('click', () => { swElapsed = 0; swRunning = false; laps = []; swRender(); });
+  // Show whatever the service already holds (so reopening the window while a countdown runs shows it).
+  const init = T.state();
+  q('.tm-min').value = init.tm.min;
+  q('.tm-sec').value = init.tm.sec;
 
-  // Countdown timer
-  let tmRemaining = 300000, tmEnd = 0, tmRunning = false, tmDone = false;
-  const tmFmt = ms => { const s = Math.ceil(ms / 1000); return `${pad(s / 60)}:${pad(s % 60)}`; };
-  const tmInput = () => Math.max(0, (parseInt(q('.tm-min').value, 10) || 0) * 60000 + Math.min(59, parseInt(q('.tm-sec').value, 10) || 0) * 1000);
-  function tmRender() {
+  let lapsKey = null;
+  function render() {
+    const s = T.state();
+    q('.sw-display').textContent = swFmt(s.sw.now);
+    q('.sw-start').textContent = s.sw.running ? 'Stop' : (s.sw.elapsed ? 'Resume' : 'Start');
+    const key = s.sw.laps.join(',');
+    if (key !== lapsKey) {
+      lapsKey = key;
+      q('.tm-laps').innerHTML = s.sw.laps.map((l, i) => `<div class="tm-lap"><span>Lap ${s.sw.laps.length - i}</span><span>${swFmt(l)}</span></div>`).reverse().join('');
+    }
     const el = q('.tm-display-main');
-    el.textContent = tmDone ? "Time's up!" : tmFmt(tmRunning ? Math.max(0, tmEnd - performance.now()) : tmRemaining);
-    el.classList.toggle('done', tmDone);
-    q('.tm-start').textContent = tmRunning ? 'Pause' : 'Start';
+    el.textContent = s.tm.done ? "Time's up!" : tmFmt(s.tm.left);
+    el.classList.toggle('done', s.tm.done);
+    q('.tm-start').textContent = s.tm.running ? 'Pause' : 'Start';
   }
-  let tmTotal = 300000, tmPaused = false;
-  const tmWords = ms => {
-    const t = Math.round(ms / 1000), m = Math.floor(t / 60), r = t % 60;
-    return ((m ? m + ' min' : '') + (m && r ? ' ' : '') + (r ? r + ' sec' : '')) || '0 sec';
-  };
-  function timesUp() {
-    Sounds.alarm();
-    if (typeof Notify !== 'undefined') Notify.push({ title: "Time's up!", body: 'Your ' + tmWords(tmTotal) + ' timer has finished.', icon: '⏱️', appId: 'store:timer', timeout: 10000 });
-  }
-  q('.tm-start').addEventListener('click', () => {
-    if (tmRunning) { tmRemaining = Math.max(0, tmEnd - performance.now()); tmRunning = false; tmPaused = true; }
-    else {
-      if (tmDone || tmRemaining <= 0) { tmDone = false; tmRemaining = tmInput(); tmPaused = false; }
-      if (tmRemaining > 0) {
-        if (!tmPaused) tmTotal = tmRemaining;
-        tmPaused = false;
-        tmEnd = performance.now() + tmRemaining; tmRunning = true;
-      }
-    }
-    tmRender();
-  });
-  q('.tm-reset').addEventListener('click', () => { tmRunning = false; tmDone = false; tmPaused = false; tmRemaining = tmInput(); tmRender(); });
-  body.querySelectorAll('.tm-num').forEach(i => i.addEventListener('input', () => { if (!tmRunning && !tmDone) { tmRemaining = tmInput(); tmRender(); } }));
 
-  const tick = setInterval(() => {
-    if (swRunning) q('.sw-display').textContent = swFmt(swNow());
-    if (tmRunning) {
-      if (tmEnd - performance.now() <= 0) { tmRunning = false; tmDone = true; tmRemaining = 0; tmPaused = false; timesUp(); }
-      tmRender();
-    }
-  }, 50);
-  ctx.onClose(() => clearInterval(tick));
-  swRender(); tmRender();
+  q('.sw-start').addEventListener('click', () => T.swToggle());
+  q('.sw-lap').addEventListener('click', () => T.swLap());
+  q('.sw-reset').addEventListener('click', () => T.swReset());
+  q('.tm-start').addEventListener('click', () => T.tmToggle());
+  q('.tm-reset').addEventListener('click', () => T.tmReset());
+  body.querySelectorAll('.tm-num').forEach(i => i.addEventListener('input', () => T.setInputs(q('.tm-min').value, q('.tm-sec').value)));
+
+  // Only the on-screen view is torn down when the window closes; the timers keep running in TimerService.
+  ctx.onClose(T.subscribe(render));
+  render();
 }
 
 /* =====================================================================
@@ -6548,6 +6625,78 @@ const FileOpen = {
       return FileManagerAPI.show(n.parent, n.id, true);
     } catch (e) {
       if (typeof Notify !== 'undefined') Notify.push({ title: "Couldn't open the file", body: 'Browser storage is not available right now.', icon: '⚠️' });
+    }
+  }
+};
+/* ---------- Run / Preview a .html file in a sandboxed window ----------
+   The page runs in an iframe WITHOUT allow-same-origin, so it gets its own empty origin: it can't read the
+   desktop's settings, chat, files or notes, and it can't navigate or script this page. */
+const HtmlRunner = {
+  isHtml: n => !!n && n.type === 'file' && /^(html?|xhtml)$/.test(FileStore.extOf(n.name)),
+  run(node) {
+    if (!HtmlRunner.isHtml(node)) return;
+    AppWindows.open({ id: 'run-' + node.id, title: node.name + ' (Run)', icon: '▶️', width: 780, height: 560,
+      mount: (body, ctx) => HtmlRunner.mount(body, ctx, node.id) });
+  },
+  mount(body, ctx, nodeId) {
+    body.innerHTML = `
+      <div class="rn-root">
+        <div class="fm-bar">
+          <button type="button" class="fm-ibtn" data-a="reload" title="Reload from the saved file">↻ Reload</button>
+          <span class="rn-note">Sandboxed: this page can't access your desktop data</span>
+        </div>
+        <iframe class="rn-frame" title="Sandboxed page"
+          sandbox="allow-scripts allow-forms allow-popups allow-modals allow-pointer-lock allow-downloads"
+          allow="fullscreen; autoplay; gamepad; clipboard-write; encrypted-media; accelerometer; gyroscope" allowfullscreen></iframe>
+        <div class="rn-msg" hidden></div>
+      </div>`;
+    const frame = body.querySelector('.rn-frame'), msg = body.querySelector('.rn-msg');
+    let url = null, disposed = false;
+    const fail = text => { frame.hidden = true; msg.hidden = false; msg.textContent = text; };
+    async function load() {
+      try {
+        const n = await FileStore.get(nodeId);
+        if (disposed) return;
+        if (!n || n.type !== 'file') { fail('This file is no longer there.'); return; }
+        const d = await FileStore.readData(nodeId);
+        const text = typeof d === 'string' ? d : (d && d.text ? await d.text() : '');
+        if (disposed) return;
+        if (url) URL.revokeObjectURL(url);
+        url = URL.createObjectURL(new Blob([text], { type: 'text/html;charset=utf-8' }));
+        msg.hidden = true; frame.hidden = false;
+        frame.src = url;
+        ctx.setTitle(n.name + ' (Run)');
+        setTimeout(() => { try { frame.focus(); } catch (_) {} }, 150);
+      } catch (e) { fail(fsErrorText(e)); }
+    }
+    body.querySelector('[data-a="reload"]').addEventListener('click', load);
+    ctx.onClose(() => {
+      disposed = true;
+      try { frame.src = 'about:blank'; } catch (_) {}
+      if (url) { URL.revokeObjectURL(url); url = null; }
+    });
+    load();
+  }
+};
+
+/* ---------- Set a picture saved in Files as the desktop wallpaper ---------- */
+const WallpaperFromFile = {
+  async set(nodeId) {
+    const note = (title, body, icon) => { if (typeof Notify !== 'undefined') Notify.push({ title, body, icon }); };
+    try {
+      const n = await FileStore.get(nodeId);
+      if (!n || n.type !== 'file' || !FileStore.isImage(n)) throw new Error('That file is not a picture.');
+      const d = await FileStore.readData(nodeId);
+      const type = n.mime || FileStore.mimeFor(n.name);
+      const blob = d instanceof Blob ? (d.type ? d : new Blob([d], { type })) : new Blob([d == null ? '' : d], { type });
+      const res = await WallpaperTools.applyFile(blob, SettingsManager.update);
+      if (res.ok) {
+        note('Wallpaper updated', res.info.compressed ? 'Compressed from ' + WallpaperTools.mb(res.info.before) + ' to ' + WallpaperTools.mb(res.info.after) + ' so it could be saved.' : '“' + n.name + '” is now your wallpaper.', '🖼️');
+      } else {
+        note("Couldn't set the wallpaper", "Browser storage is full, so the wallpaper couldn't be saved. Free some space in Settings → Performance & Storage and try again.", '⚠️');
+      }
+    } catch (e) {
+      note("Couldn't set the wallpaper", (e && e.message) || "Couldn't use that image.", '⚠️');
     }
   }
 };
@@ -6703,6 +6852,7 @@ function PhotoViewerApp(body, ctx) {
         <span class="fm-sepv"></span>
         <button type="button" class="fm-ibtn" data-a="dl" title="Download to your computer">⬇ Download</button>
         <button type="button" class="fm-ibtn" data-a="show" title="Show in File Manager">🗂️ Show</button>
+        <button type="button" class="fm-ibtn" data-a="wall" title="Use this picture as the desktop wallpaper">🖼️ Wallpaper</button>
         <span class="pv-name"></span>
       </div>
       <div class="pv-stage" tabindex="0"><img class="pv-img" alt="" hidden /><div class="pv-msg">Open a picture from File Manager.</div></div>
@@ -6751,6 +6901,7 @@ function PhotoViewerApp(body, ctx) {
     const set = (a, v) => { const b = q('[data-a="' + a + '"]'); if (b) b.disabled = !!v; };
     set('prev', i < 0 || siblings.length < 2); set('next', i < 0 || siblings.length < 2);
     ['out', 'in', 'fit', 'full', 'dl', 'show'].forEach(a => set(a, !cur || !nw && a !== 'dl' && a !== 'show'));
+    set('wall', !cur);
     if (cur) q('.pv-info').textContent = (i >= 0 ? (i + 1) + ' of ' + siblings.length + ' · ' : '') + S.fmtSize(cur.size || 0) + (nw ? ' · ' + nw + ' × ' + nh : '');
   }
   async function open(id) {
@@ -6810,6 +6961,7 @@ function PhotoViewerApp(body, ctx) {
     else if (a === 'fit') fit(); else if (a === 'full') actual();
     else if (a === 'dl') download();
     else if (a === 'show' && cur) FileManagerAPI.show(cur.parent, cur.id);
+    else if (a === 'wall' && cur) WallpaperFromFile.set(cur.id);
   });
   stage.addEventListener('wheel', e => {
     if (!nw) return;
@@ -6832,6 +6984,17 @@ function PhotoViewerApp(body, ctx) {
   stage.addEventListener('pointerup', endDrag);
   stage.addEventListener('pointercancel', endDrag);
   stage.addEventListener('dblclick', () => { if (!nw) return; if (fitMode && scale < 1) actual(); else fit(); });
+  stage.addEventListener('contextmenu', e => {
+    e.preventDefault();
+    e.stopPropagation();
+    const c = cur;
+    if (!c) return;
+    ContextMenu.show(e.clientX, e.clientY, [
+      { icon: '🖼️', label: 'Set as wallpaper', onClick: () => WallpaperFromFile.set(c.id) },
+      { icon: '⬇️', label: 'Download', onClick: download },
+      { icon: '🗂️', label: 'Show in File Manager', onClick: () => FileManagerAPI.show(c.parent, c.id) }
+    ]);
+  });
   stage.addEventListener('keydown', e => {
     if (e.key === 'ArrowLeft') { e.preventDefault(); step(-1); }
     else if (e.key === 'ArrowRight') { e.preventDefault(); step(1); }
@@ -6894,6 +7057,7 @@ function FileManagerApp(body, ctx) {
         <button type="button" class="fm-ibtn" data-a="upload">⬆️ Upload</button>
         <span class="fm-sepv"></span>
         <button type="button" class="fm-ibtn" data-a="open">Open</button>
+        <button type="button" class="fm-ibtn" data-a="run" title="Run this .html file in a sandboxed window">▶ Run</button>
         <button type="button" class="fm-ibtn" data-a="cut">✂️ Cut</button>
         <button type="button" class="fm-ibtn" data-a="copy">⧉ Copy</button>
         <button type="button" class="fm-ibtn" data-a="paste">📋 Paste</button>
@@ -6998,6 +7162,7 @@ function FileManagerApp(body, ctx) {
     dis('up', atRoot());
     dis('newfolder', atRoot()); dis('newfile', atRoot()); dis('upload', atRoot());
     dis('open', sel.length !== 1);
+    dis('run', !(sel.length === 1 && HtmlRunner.isHtml(sel[0])));
     dis('rename', sel.length !== 1);
     dis('cut', !sel.length); dis('copy', !sel.length); dis('delete', !sel.length);
     dis('download', !sel.some(n => n.type === 'file'));
@@ -7251,6 +7416,7 @@ function FileManagerApp(body, ctx) {
     else if (a === 'newfile') newFile();
     else if (a === 'upload') q('.fm-file').click();
     else if (a === 'open') openNode(selNodes()[0]);
+    else if (a === 'run') HtmlRunner.run(selNodes()[0]);
     else if (a === 'cut') setClip('cut');
     else if (a === 'copy') setClip('copy');
     else if (a === 'paste') paste();
@@ -7306,7 +7472,9 @@ function FileManagerApp(body, ctx) {
       const sel = selNodes(), one = sel.length === 1 ? sel[0] : null;
       const items = [];
       if (one) items.push({ icon: '📂', label: 'Open', onClick: () => openNode(one) });
+      if (one && HtmlRunner.isHtml(one)) items.push({ icon: '▶️', label: 'Run / Preview', onClick: () => HtmlRunner.run(one) });
       if (one && one.type === 'file') items.push({ icon: '📝', label: 'Edit in Text Editor', onClick: () => TextEditorAPI.show(one.id) });
+      if (one && S.isImage(one)) items.push({ icon: '🖼️', label: 'Set as wallpaper', onClick: () => WallpaperFromFile.set(one.id) });
       if (one && isZip(one)) items.push({ icon: '📤', label: 'Extract to new folder', disabled: atRoot(), onClick: () => unzip(one) });
       if (items.length) items.push({ separator: true });
       items.push({ icon: '✂️', label: 'Cut', onClick: () => setClip('cut') });
@@ -7523,7 +7691,7 @@ function TextEditorApp(body, ctx) {
 </script>
 <script>
 "use strict";
-if (window.__cosSwapping) throw new Error("Console OS: running an installed update instead of this file");
+if (window.__cosSwapping) throw new Error("Nexus OS: running an installed update instead of this file");
 /* ===================================================
    ConsoleUpdater - checks the update source, shows a notification that stays until the update is
    installed, then downloads the new file, stores it, and restarts into it.
@@ -7595,7 +7763,7 @@ const ConsoleUpdater = (function() {
     const res = await fetch(url + sep + "_=" + Date.now(), { cache: "no-store" });
     if (!res.ok) throw new Error("HTTP " + res.status);
     const text = await res.text();
-    if (text.length < 20000 || !/<\/html>\s*$/i.test(text) || !/<html/i.test(text)) throw new Error("That doesn't look like a Console OS file.");
+    if (text.length < 20000 || !/<\/html>\s*$/i.test(text) || !/<html/i.test(text)) throw new Error("That doesn't look like a Nexus OS file.");
     const info = parse(text);
     if (!info) throw new Error("No version number found in the downloaded file.");
     return { text, info };
@@ -7618,7 +7786,7 @@ const ConsoleUpdater = (function() {
         state.available = { version: got.info.version, notes: got.info.notes };
         saveState(); showBanner();
         if (typeof Notify !== "undefined" && !wasKnown) {
-          Notify.push({ title: "Update available: " + got.info.version, body: got.info.notes || "A new version of Console OS is ready to install.", icon: "⬆️", tag: "cos-update", timeout: 9000 });
+          Notify.push({ title: "Update available: " + got.info.version, body: got.info.notes || "A new version of Nexus OS is ready to install.", icon: "⬆️", tag: "cos-update", timeout: 9000 });
         }
         listeners.forEach(f => { try { f(); } catch (e) {} });
         return { state: "available", info: got.info };
