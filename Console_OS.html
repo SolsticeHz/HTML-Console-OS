@@ -3,8 +3,8 @@
 
 // To publish an update: change CONSOLE_OS_VERSION (higher number)
 
-var CONSOLE_OS_VERSION = "2026.11.4";
-var CONSOLE_OS_UPDATE_NOTES = "Embedded sites and games now get audio and autoplay permissions (autoplay, encrypted media, picture-in-picture, fullscreen, gamepad) so music players like Waveform have the best chance of playing sound.";
+var CONSOLE_OS_VERSION = "2026.11.5";
+var CONSOLE_OS_UPDATE_NOTES = "Games and links can now open in normal windows that minimize (right-click, Open in a window). New Favorites section at the top of the Start Menu (right-click, Add to favorites). New Media Player opens videos from File Manager. Embedded sites can no longer redirect the whole OS tab on their own.";
 var CONSOLE_OS_UPDATE_URL = "https://raw.githubusercontent.com/SolsticeHz/HTML-Console-OS/refs/heads/main/Console_OS.html";
 (function () {
   try {
@@ -1230,6 +1230,26 @@ fullscreen-portal {
 .pv-msg[hidden], .pv-img[hidden] { display: none !important; }
 .pv-name { margin-left: auto; font-size: 12px; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
 .pv-status { display: flex; justify-content: space-between; gap: 10px; padding: 4px 10px; font-size: 11px; color: var(--text-muted); border-top: 1px solid var(--line); background: var(--surface-3); }
+.mp-root { display: flex; flex-direction: column; height: 100%; min-height: 0; position: relative; background: var(--surface-1); }
+.mp-stage { flex: 1; min-height: 0; position: relative; overflow: hidden; background: #000; display: flex; align-items: center; justify-content: center; outline: none; }
+.mp-video { width: 100%; height: 100%; object-fit: contain; background: #000; display: block; }
+.mp-video[hidden], .mp-msg[hidden] { display: none !important; }
+.mp-msg { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: var(--text-muted); font-size: 13px; text-align: center; padding: 20px; pointer-events: none; }
+.mp-controls { display: flex; flex-direction: column; gap: 2px; padding: 6px 10px 6px; background: var(--surface-3); border-top: 1px solid var(--line); }
+.mp-seekrow { display: flex; align-items: center; gap: 8px; font-size: 11px; color: var(--text-muted); font-variant-numeric: tabular-nums; }
+.mp-seek { flex: 1; min-width: 0; accent-color: var(--accent-color); cursor: pointer; }
+.mp-btns { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
+.mp-vol { width: 84px; accent-color: var(--accent-color); cursor: pointer; }
+.mp-spacer { flex: 1; }
+.mp-play { min-width: 40px; font-size: 15px; }
+.mp-rate { height: 28px; border-radius: 6px; border: 1px solid var(--line); background: var(--surface-3); color: var(--text); font-size: 12px; font-family: inherit; cursor: pointer; }
+.mp-root .fm-ibtn.on { background: var(--hover-bg); border-color: var(--accent-color); }
+.mp-root:fullscreen { background: #000; }
+.mp-root:fullscreen .fm-bar, .mp-root:fullscreen .pv-status { display: none; }
+.mp-root:fullscreen .mp-controls { position: absolute; left: 0; right: 0; bottom: 0; background: linear-gradient(transparent, rgba(0,0,0,.8)); border: 0; color: #fff; transition: opacity .2s; }
+.mp-root:fullscreen .mp-controls .fm-ibtn, .mp-root:fullscreen .mp-seekrow { color: #fff; }
+.mp-root:fullscreen.mp-idle .mp-controls { opacity: 0; pointer-events: none; }
+.mp-root:fullscreen.mp-idle .mp-stage { cursor: none; }
 .te-root { display: flex; flex-direction: column; height: 100%; min-height: 0; }
 .te-bar { display: flex; gap: 4px; align-items: center; padding: 6px 8px; border-bottom: 1px solid var(--line); background: var(--surface-3); flex-wrap: wrap; }
 .te-name { margin-left: auto; font-size: 12px; color: var(--text-soft); max-width: 38%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -2332,7 +2352,8 @@ const PerfStorage = (function() {
     "win11_chat_cleared_at_v1": "Time the chat was last cleared (stops cleared messages returning from relay history)",
     "win11_chat_user_id_v1": "Anonymous ID for this device, so your own past chat messages are recognised",
     "win11_themes_v1": "Themes you saved (wallpaper + accent colour)",
-    "win11_notifications_v1": "Notification centre history and the Do Not Disturb setting"
+    "win11_notifications_v1": "Notification centre history and the Do Not Disturb setting",
+    "win11_favorites_v1": "Start Menu favorites: the apps and games you starred"
   };
 
   let fpsVal = null, fpsSampling = false, batteryText = null;
@@ -4372,7 +4393,6 @@ const gameGroups = [
   {
     title: "Music & Television",
     items: [
-      { name: "Spotify Blue Music: Best", url: "https://ltorl.github.io/openify-music/", icon: "♬" },
       { name: "Waveform Music", url: "https://waveform2.netlify.app", icon: "🎵" },
       { name: "Waveform Music (Backup)", url: "https://peekaboom-proxy.github.io/__px/https://waveform2.netlify.app", icon: "🎶" },
       { name: "BandCamp", url: "https://peekaboom-proxy.github.io/__px/https://bandcamp.com/", icon: "🎸" },
@@ -4446,6 +4466,87 @@ const Registry = {
   }
 };
 
+/* ===================================================
+   Favorites (Start Menu) - right-click an app or game -> Add to favorites
+   =================================================== */
+const Favorites = (function() {
+  const KEY = "win11_favorites_v1";
+  let ids = [];
+  function load() {
+    try {
+      const a = JSON.parse(localStorage.getItem(KEY) || "[]");
+      ids = Array.isArray(a) ? a.filter((x, i, arr) => typeof x === "string" && arr.indexOf(x) === i).slice(0, 100) : [];
+    } catch (e) { ids = []; }
+  }
+  function save() { try { localStorage.setItem(KEY, JSON.stringify(ids)); } catch (e) {} }
+  const has = id => ids.indexOf(id) !== -1;
+  function toggle(id) {
+    if (has(id)) ids = ids.filter(x => x !== id); else ids.push(id);
+    save();
+    if (typeof renderStartMenu === "function") renderStartMenu();
+  }
+  function items() {
+    const out = [];
+    ids.forEach(id => { try { const it = Registry.get(id); if (it) out.push(it); } catch (e) {} });
+    return out;
+  }
+  load();
+  window.addEventListener("storage", e => { if (e.key === KEY) { load(); if (typeof renderStartMenu === "function") renderStartMenu(); } });
+  return { has, toggle, items };
+})();
+
+/* ===================================================
+   Windowed games / links - runs a site in a normal window that can be minimized
+   =================================================== */
+const PortalWindows = (function() {
+  const hash = s => { let h = 5381; for (let i = 0; i < s.length; i++) h = ((h * 33) ^ s.charCodeAt(i)) >>> 0; return h.toString(36); };
+  function open(item) {
+    if (!item || !item.url) return;
+    closeSearch();
+    $('startMenu').classList.remove('open');
+    const id = 'game-' + hash(String(item.id || item.url));
+    AppWindows.open({ id: id, itemId: item.id, title: item.name, icon: item.icon, width: 900, height: 580,
+      mount: (body, ctx) => mount(body, ctx, item, AppWindows.winId(id)) });
+  }
+  function mount(body, ctx, item, wid) {
+    body.innerHTML = `
+      <div class="rn-root">
+        <div class="fm-bar">
+          <button type="button" class="fm-ibtn" data-a="reload" title="Reload">↻ Reload</button>
+          <button type="button" class="fm-ibtn" data-a="full" title="Full screen">⛶ Fullscreen</button>
+          <span class="rn-note">Minimizing keeps this running</span>
+        </div>
+        <iframe class="rn-frame" title="" allowfullscreen></iframe>
+      </div>`;
+    const frame = body.querySelector('.rn-frame');
+    frame.title = item.name;
+    frame.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-forms allow-popups allow-top-navigation-by-user-activation allow-pointer-lock');
+    frame.setAttribute('allow', 'autoplay; encrypted-media; fullscreen; picture-in-picture; clipboard-write; gamepad; accelerometer; gyroscope');
+    frame.src = item.url;
+    body.querySelector('[data-a="reload"]').addEventListener('click', () => { frame.src = item.url; });
+    body.querySelector('[data-a="full"]').addEventListener('click', () => { try { frame.requestFullscreen(); } catch (e) {} });
+    // Clicking inside the page doesn't reach the OS, so bring the window to the front when the frame takes focus.
+    const onBlur = () => setTimeout(() => {
+      if (document.activeElement === frame && !WindowManager.isClosed(wid) && !WindowManager.isFocused(wid)) WindowManager.focus(wid);
+    }, 0);
+    window.addEventListener('blur', onBlur);
+    ctx.onClose(() => {
+      window.removeEventListener('blur', onBlur);
+      try { frame.src = 'about:blank'; } catch (e) {}
+    });
+  }
+  return { open };
+})();
+
+/* Video files (opened by the Media Player) */
+const VideoFiles = (function() {
+  const MIMES = { mp4: "video/mp4", m4v: "video/mp4", webm: "video/webm", ogv: "video/ogg", mov: "video/quicktime", mkv: "video/x-matroska" };
+  return {
+    is: n => !!n && n.type === "file" && (String(n.mime || "").indexOf("video/") === 0 || !!MIMES[FileStore.extOf(n.name)]),
+    mime: n => (String(n.mime || "").indexOf("video/") === 0 ? n.mime : MIMES[FileStore.extOf(n.name)]) || "video/mp4"
+  };
+})();
+
 function launchItem(item) {
   closeSearch();
   $('startMenu').classList.remove('open');
@@ -4475,6 +4576,13 @@ function showItemMenu(x, y, item, opts) {
       onClick: () => Taskbar.toggle(item.id)
     }
   ];
+  if (item.kind === 'app' || item.kind === 'game' || item.kind === 'store') {
+    const fav = Favorites.has(item.id);
+    entries.push({ icon: fav ? '☆' : '⭐', label: fav ? 'Remove from favorites' : 'Add to favorites', onClick: () => Favorites.toggle(item.id) });
+  }
+  if (item.type === 'portal' && item.url) {
+    entries.push({ icon: '🪟', label: 'Open in a window', onClick: () => PortalWindows.open(item) });
+  }
   if (opts.rename) {
     entries.push({ icon: '✏️', label: 'Rename', onClick: () => setTimeout(() => Desktop.startRename(item.id), 0) });
     if (Desktop.hasCustomName(item.id)) entries.push({ icon: '↩️', label: 'Reset name', onClick: () => Desktop.resetName(item.id) });
@@ -5237,6 +5345,8 @@ function renderStartMenu() {
     if (!target) { target = { title: name, entries: [] }; groups.push(target); }
     AppStore.installedItems().forEach(it => target.entries.push({ item: it, entry: it }));
   }
+  const favItems = (typeof Favorites !== 'undefined') ? Favorites.items() : [];
+  if (favItems.length) groups.unshift({ title: 'Favorites', fav: true, entries: favItems.map(f => ({ item: f, entry: f })) });
 
   groups.forEach(group => {
     const section = document.createElement('div');
@@ -5257,7 +5367,7 @@ function renderStartMenu() {
       tile.innerHTML = `<div class="game-tile-icon">${escapeHtml(item.icon)}</div><div class="game-tile-name">${escapeHtml(item.name)}</div>`;
       tile.addEventListener('click', e => {
         if (e.button !== 0 || e.ctrlKey || recentlyContext()) return;
-        if (entry && entry.kind === 'store') { launchItem(entry); return; }
+        if (group.fav || (entry && entry.kind === 'store')) { launchItem(entry); return; }
         $('startMenu').classList.remove('open');
         closeSearch();
         $('gamePortal').launch(item.url, item.name);
@@ -5536,7 +5646,7 @@ class FullscreenPortal extends HTMLElement {
     iframe.className = this._randomAttr(16);
     iframe.style.cssText = this._frameCss(iframe._z);
     iframe.setAttribute(this._randomAttr(10), "true");
-    iframe.setAttribute("sandbox", "allow-scripts allow-same-origin allow-forms allow-popups allow-top-navigation allow-pointer-lock");
+    iframe.setAttribute("sandbox", "allow-scripts allow-same-origin allow-forms allow-popups allow-top-navigation-by-user-activation allow-pointer-lock");
     iframe.setAttribute("allow", "autoplay; encrypted-media; fullscreen; picture-in-picture; clipboard-write; gamepad; accelerometer; gyroscope");
     iframe.setAttribute("allowfullscreen", "");
     iframe.src = url;
@@ -5849,6 +5959,9 @@ const APPSTORE_CATALOG = [
   { id: "photo-viewer", type: "app", name: "Photo Viewer", icon: "🖼️", category: "Tools",
     description: "View pictures saved in File Manager. Zoom, pan and flip through a folder.",
     window: { width: 760, height: 540 }, mount: PhotoViewerApp, system: true },
+  { id: "media-player", type: "app", name: "Media Player", icon: "🎬", category: "Tools",
+    description: "Plays videos saved in File Manager.",
+    window: { width: 820, height: 560 }, mount: MediaPlayerApp, system: true },
 
   /* ---------- Link apps (note: some sites refuse to be shown inside other pages) ---------- */
   { id: "wikipedia", type: "link", name: "Wikipedia", icon: "📖", category: "Reference",
@@ -6580,6 +6693,7 @@ function TimerApp(body, ctx) {
 const FMBridge = { instance: null, pending: null };
 const EditorBridge = { instance: null, pending: null };
 const PVBridge = { instance: null, pending: null };
+const MPBridge = { instance: null, pending: null };
 
 const FileManagerAPI = {
   show(folderId, selectId, openIt) {
@@ -6617,6 +6731,18 @@ const PhotoViewerAPI = {
     }
   }
 };
+const MediaPlayerAPI = {
+  show(fileId) {
+    const wid = AppWindows.winId('media-player');
+    if (MPBridge.instance && WindowManager.get(wid) && !WindowManager.isClosed(wid)) {
+      WindowManager.open(wid);
+      if (fileId) MPBridge.instance.open(fileId);
+    } else {
+      MPBridge.pending = fileId || null;
+      AppStore.openEntry('media-player');
+    }
+  }
+};
 const FileOpen = {
   async open(id) {
     try {
@@ -6624,6 +6750,7 @@ const FileOpen = {
       if (!n) return;
       if (n.type === 'folder') return FileManagerAPI.show(n.id);
       if (FileStore.isImage(n)) return PhotoViewerAPI.show(n.id);
+      if (VideoFiles.is(n)) return MediaPlayerAPI.show(n.id);
       if (FileStore.isText(n)) return TextEditorAPI.show(n.id);
       return FileManagerAPI.show(n.parent, n.id, true);
     } catch (e) {
@@ -7033,6 +7160,304 @@ function PhotoViewerApp(body, ctx) {
   });
 }
 
+/* ---------- Media Player (videos saved in File Manager; opened from File Manager, not listed in the Appstore) ---------- */
+function MediaPlayerApp(body, ctx) {
+  const S = FileStore;
+  const RATES = [0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2];
+  const prefs = Object.assign({ volume: 1, muted: false }, ctx.storage.get('prefs', {}));
+  let cur = null, siblings = [], url = null, disposed = false, openToken = 0;
+  let seeking = false, rate = 1, idleTimer = null, clickTimer = null;
+
+  body.innerHTML = `
+    <div class="mp-root">
+      <div class="fm-bar">
+        <button type="button" class="fm-ibtn" data-a="open" title="Open a video">📂 Open</button>
+        <button type="button" class="fm-ibtn" data-a="prev" title="Previous video in this folder (P)">◀ Prev</button>
+        <button type="button" class="fm-ibtn" data-a="next" title="Next video in this folder (N)">Next ▶</button>
+        <span class="fm-sepv"></span>
+        <button type="button" class="fm-ibtn" data-a="dl" title="Download to your computer">⬇ Download</button>
+        <button type="button" class="fm-ibtn" data-a="show" title="Show in File Manager">🗂️ Show</button>
+        <span class="pv-name mp-name"></span>
+      </div>
+      <div class="mp-stage" tabindex="0"><video class="mp-video" playsinline preload="metadata" hidden></video><div class="mp-msg">Open a video from File Manager.</div></div>
+      <div class="mp-controls">
+        <div class="mp-seekrow"><span class="mp-cur">0:00</span><input type="range" class="mp-seek" min="0" max="1000" step="1" value="0" aria-label="Seek" /><span class="mp-dur">0:00</span></div>
+        <div class="mp-btns">
+          <button type="button" class="fm-ibtn" data-a="back" title="Back 10 seconds (J)">⏪ 10</button>
+          <button type="button" class="fm-ibtn mp-play" data-a="play" title="Play / Pause (Space)">▶</button>
+          <button type="button" class="fm-ibtn" data-a="fwd" title="Forward 10 seconds (L)">10 ⏩</button>
+          <button type="button" class="fm-ibtn" data-a="stop" title="Stop">⏹</button>
+          <span class="fm-sepv"></span>
+          <button type="button" class="fm-ibtn" data-a="mute" title="Mute / unmute (M)">🔊</button>
+          <input type="range" class="mp-vol" min="0" max="100" step="1" value="100" aria-label="Volume" />
+          <span class="mp-spacer"></span>
+          <select class="mp-rate" title="Playback speed ( [ and ] )" aria-label="Playback speed">${RATES.map(r => `<option value="${r}"${r === 1 ? ' selected' : ''}>${r}×</option>`).join('')}</select>
+          <button type="button" class="fm-ibtn" data-a="loop" title="Repeat this video (R)">🔁 Loop</button>
+          <button type="button" class="fm-ibtn" data-a="pip" title="Picture in picture">🗗 PiP</button>
+          <button type="button" class="fm-ibtn" data-a="full" title="Full screen (F)">⛶</button>
+        </div>
+      </div>
+      <div class="pv-status"><span class="mp-info"></span><span class="mp-state"></span></div>
+    </div>`;
+  const q = s => body.querySelector(s);
+  const root = q('.mp-root'), stage = q('.mp-stage'), v = q('.mp-video'), msg = q('.mp-msg');
+  const seek = q('.mp-seek'), volEl = q('.mp-vol'), rateEl = q('.mp-rate');
+  const fail = e => AppDialog.alert(body, { title: "Couldn't do that", message: fsErrorText(e) });
+  const fmtT = t => {
+    if (!isFinite(t) || t < 0) t = 0;
+    t = Math.floor(t);
+    const h = Math.floor(t / 3600), m = Math.floor((t % 3600) / 60), s = t % 60;
+    return (h ? h + ':' + String(m).padStart(2, '0') : String(m)) + ':' + String(s).padStart(2, '0');
+  };
+  const idx = () => cur ? siblings.findIndex(n => n.id === cur.id) : -1;
+  const setState = t => { q('.mp-state').textContent = t || ''; };
+
+  function updatePlay() {
+    const b = q('.mp-play');
+    b.textContent = v.paused ? '▶' : '⏸';
+    b.title = v.paused ? 'Play (Space)' : 'Pause (Space)';
+  }
+  function updateTime() {
+    const d = v.duration;
+    q('.mp-cur').textContent = fmtT(v.currentTime);
+    q('.mp-dur').textContent = isFinite(d) ? fmtT(d) : '0:00';
+    if (!seeking) seek.value = isFinite(d) && d > 0 ? Math.round(v.currentTime / d * 1000) : 0;
+  }
+  function updateVol() {
+    const off = v.muted || v.volume === 0;
+    volEl.value = Math.round((v.muted ? 0 : v.volume) * 100);
+    q('[data-a="mute"]').textContent = off ? '🔇' : (v.volume < 0.5 ? '🔉' : '🔊');
+  }
+  function updateButtons() {
+    const has = !!cur, i = idx();
+    const set = (a, d) => { const b = q('[data-a="' + a + '"]'); if (b) b.disabled = !!d; };
+    ['back', 'play', 'fwd', 'stop', 'loop', 'full', 'dl', 'show'].forEach(a => set(a, !has));
+    set('prev', i < 0 || siblings.length < 2);
+    set('next', i < 0 || siblings.length < 2);
+    set('pip', !has || !document.pictureInPictureEnabled || typeof v.requestPictureInPicture !== 'function');
+    seek.disabled = !has; rateEl.disabled = !has;
+    q('[data-a="loop"]').classList.toggle('on', v.loop);
+    q('.mp-info').textContent = has ? (i >= 0 ? (i + 1) + ' of ' + siblings.length + ' · ' : '') + S.fmtSize(cur.size || 0) + (v.videoWidth ? ' · ' + v.videoWidth + ' × ' + v.videoHeight : '') : '';
+  }
+  function clearVideo(text) {
+    try { v.pause(); v.removeAttribute('src'); v.load(); } catch (_) {}
+    if (url) { URL.revokeObjectURL(url); url = null; }
+    v.hidden = true; msg.textContent = text; msg.hidden = false;
+    q('.mp-name').textContent = ''; setState(''); updatePlay(); updateTime(); updateButtons();
+  }
+  async function loadSiblings() {
+    if (!cur) { siblings = []; return; }
+    const kids = await S.children(cur.parent);
+    siblings = kids.filter(VideoFiles.is).sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base', numeric: true }));
+  }
+  async function open(id) {
+    const token = ++openToken;
+    try {
+      const n = await S.get(id);
+      if (token !== openToken || disposed) return;
+      if (!VideoFiles.is(n)) { fail(new Error("That file isn't a video, or it's no longer there.")); return; }
+      const d = await S.readData(id);
+      if (token !== openToken || disposed) return;
+      const type = VideoFiles.mime(n);
+      const blob = d instanceof Blob && d.type.indexOf('video/') === 0 ? d : new Blob([d == null ? '' : d], { type });
+      cur = n;
+      await loadSiblings();
+      if (token !== openToken || disposed) return;
+      if (url) URL.revokeObjectURL(url);
+      url = URL.createObjectURL(blob);
+      v.hidden = false; msg.hidden = true;
+      v.defaultPlaybackRate = rate;
+      v.src = url; v.load();
+      ctx.setTitle(n.name + ' — Media Player');
+      q('.mp-name').textContent = n.name;
+      setState('Loading…'); updateButtons(); updateTime(); updatePlay();
+      const p = v.play(); if (p && p.catch) p.catch(() => {});
+    } catch (e) { fail(e); }
+  }
+  function step(dir) {
+    const i = idx();
+    if (i < 0 || siblings.length < 2) return;
+    open(siblings[(i + dir + siblings.length) % siblings.length].id);
+  }
+  function toggle() {
+    if (!cur) return;
+    if (v.paused) { const p = v.play(); if (p && p.catch) p.catch(() => {}); } else v.pause();
+  }
+  function skip(sec) { if (cur && isFinite(v.duration)) v.currentTime = Math.max(0, Math.min(v.duration, v.currentTime + sec)); }
+  function stop() { if (!cur) return; v.pause(); v.currentTime = 0; setState('Stopped'); }
+  function setVol(x) { v.volume = Math.max(0, Math.min(1, x)); v.muted = v.volume === 0; }
+  function toggleMute() {
+    if (v.muted || v.volume === 0) { v.muted = false; if (v.volume === 0) v.volume = 0.5; } else v.muted = true;
+  }
+  function setRate(r) {
+    rate = r; v.defaultPlaybackRate = r; v.playbackRate = r;
+    rateEl.value = String(r);
+  }
+  function changeRate(dir) {
+    const i = RATES.indexOf(rate);
+    const next = RATES[Math.max(0, Math.min(RATES.length - 1, (i < 0 ? RATES.indexOf(1) : i) + dir))];
+    setRate(next);
+  }
+  function toggleLoop() { if (!cur) return; v.loop = !v.loop; updateButtons(); }
+  function toggleFull() {
+    if (!cur) return;
+    if (document.fullscreenElement) { const p = document.exitFullscreen(); if (p && p.catch) p.catch(() => {}); }
+    else if (root.requestFullscreen) { const p = root.requestFullscreen(); if (p && p.catch) p.catch(() => {}); }
+  }
+  async function pip() {
+    try {
+      if (document.pictureInPictureElement === v) await document.exitPictureInPicture();
+      else await v.requestPictureInPicture();
+    } catch (e) {}
+  }
+  async function download() {
+    if (!cur) return;
+    try {
+      const d = await S.readData(cur.id);
+      const b = d instanceof Blob ? d : new Blob([d == null ? '' : d], { type: VideoFiles.mime(cur) });
+      const u = URL.createObjectURL(b);
+      const a = document.createElement('a'); a.href = u; a.download = cur.name;
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(u), 4000);
+    } catch (e) { fail(e); }
+  }
+  async function pickAndOpen() {
+    const pick = await FilePicker.pick(body, { mode: 'open', title: 'Open a video', startFolder: (cur && cur.parent) || 'documents' });
+    if (pick && pick.id) open(pick.id);
+  }
+
+  // video events
+  v.addEventListener('play', () => { updatePlay(); setState('Playing'); });
+  v.addEventListener('playing', () => setState('Playing'));
+  v.addEventListener('pause', () => { updatePlay(); if (!v.ended && v.currentTime > 0) setState('Paused'); });
+  v.addEventListener('waiting', () => setState('Buffering…'));
+  v.addEventListener('timeupdate', updateTime);
+  v.addEventListener('durationchange', updateTime);
+  v.addEventListener('loadedmetadata', () => { updateTime(); updateButtons(); });
+  v.addEventListener('volumechange', () => { updateVol(); prefs.volume = v.volume; prefs.muted = v.muted; ctx.storage.set('prefs', prefs); });
+  v.addEventListener('ratechange', () => { if (RATES.indexOf(v.playbackRate) !== -1) rateEl.value = String(v.playbackRate); });
+  v.addEventListener('ended', () => {
+    updatePlay();
+    const i = idx();
+    if (i >= 0 && i < siblings.length - 1) open(siblings[i + 1].id);   // keep going through the folder
+    else setState('Ended');
+  });
+  v.addEventListener('error', () => {
+    if (!cur || !v.getAttribute('src')) return;
+    v.hidden = true; msg.textContent = "Couldn't play this video. Its format or codec may not be supported by your browser.";
+    msg.hidden = false; setState('Error'); updatePlay();
+  });
+
+  // controls
+  body.addEventListener('click', e => {
+    const b = e.target.closest('[data-a]');
+    if (!b || b.disabled) return;
+    const a = b.dataset.a;
+    if (a === 'open') { pickAndOpen(); return; }
+    if (a === 'prev') step(-1); else if (a === 'next') step(1);
+    else if (a === 'play') toggle(); else if (a === 'stop') stop();
+    else if (a === 'back') skip(-10); else if (a === 'fwd') skip(10);
+    else if (a === 'mute') toggleMute(); else if (a === 'loop') toggleLoop();
+    else if (a === 'pip') pip(); else if (a === 'full') toggleFull();
+    else if (a === 'dl') download();
+    else if (a === 'show' && cur) FileManagerAPI.show(cur.parent, cur.id);
+    stage.focus();
+  });
+  seek.addEventListener('pointerdown', () => { seeking = true; });
+  const endSeek = () => { seeking = false; };
+  seek.addEventListener('pointerup', endSeek);
+  seek.addEventListener('pointercancel', endSeek);
+  seek.addEventListener('change', endSeek);
+  seek.addEventListener('input', () => {
+    if (!isFinite(v.duration)) return;
+    v.currentTime = seek.value / 1000 * v.duration;
+    q('.mp-cur').textContent = fmtT(v.currentTime);
+  });
+  volEl.addEventListener('input', () => setVol(volEl.value / 100));
+  rateEl.addEventListener('change', () => { setRate(parseFloat(rateEl.value) || 1); stage.focus(); });
+
+  // click = play/pause, double-click = full screen
+  stage.addEventListener('pointerdown', () => stage.focus());
+  stage.addEventListener('click', () => {
+    if (!cur) return;
+    clearTimeout(clickTimer);
+    clickTimer = setTimeout(toggle, 220);
+  });
+  stage.addEventListener('dblclick', () => { clearTimeout(clickTimer); toggleFull(); });
+  stage.addEventListener('contextmenu', e => {
+    e.preventDefault();
+    e.stopPropagation();
+    const c = cur;
+    if (!c) return;
+    ContextMenu.show(e.clientX, e.clientY, [
+      { icon: v.paused ? '▶️' : '⏸', label: v.paused ? 'Play' : 'Pause', onClick: toggle },
+      { icon: '🔁', label: v.loop ? 'Turn loop off' : 'Loop this video', onClick: toggleLoop },
+      { separator: true },
+      { icon: '⬇️', label: 'Download', onClick: download },
+      { icon: '🗂️', label: 'Show in File Manager', onClick: () => FileManagerAPI.show(c.parent, c.id) }
+    ]);
+  });
+  stage.addEventListener('keydown', e => {
+    if (!cur || e.ctrlKey || e.metaKey || e.altKey) return;
+    const k = e.key;
+    let used = true;
+    if (k === ' ' || k === 'k' || k === 'K') toggle();
+    else if (k === 'ArrowLeft') skip(-5); else if (k === 'ArrowRight') skip(5);
+    else if (k === 'j' || k === 'J') skip(-10); else if (k === 'l' || k === 'L') skip(10);
+    else if (k === 'ArrowUp') setVol(v.volume + 0.05); else if (k === 'ArrowDown') setVol(v.volume - 0.05);
+    else if (k === 'm' || k === 'M') toggleMute();
+    else if (k === 'f' || k === 'F') toggleFull();
+    else if (k === 'r' || k === 'R') toggleLoop();
+    else if (k === 'n' || k === 'N') step(1); else if (k === 'p' || k === 'P') step(-1);
+    else if (k === '[') changeRate(-1); else if (k === ']') changeRate(1);
+    else if (k === 'Home') v.currentTime = 0;
+    else if (k === 'End') { if (isFinite(v.duration)) v.currentTime = v.duration; }
+    else if (/^[0-9]$/.test(k)) { if (isFinite(v.duration)) v.currentTime = v.duration * Number(k) / 10; }
+    else used = false;
+    if (used) e.preventDefault();
+  });
+
+  // full screen: hide the controls after a moment of no mouse movement
+  function wake() {
+    root.classList.remove('mp-idle');
+    clearTimeout(idleTimer);
+    if (document.fullscreenElement === root) idleTimer = setTimeout(() => { if (!v.paused) root.classList.add('mp-idle'); }, 2500);
+  }
+  const onFs = () => { wake(); if (document.fullscreenElement !== root) root.classList.remove('mp-idle'); };
+  root.addEventListener('pointermove', wake);
+  document.addEventListener('fullscreenchange', onFs);
+
+  ctx.onClose(() => {
+    disposed = true;
+    clearTimeout(idleTimer); clearTimeout(clickTimer);
+    document.removeEventListener('fullscreenchange', onFs);
+    try { if (document.fullscreenElement === root) document.exitFullscreen().catch(() => {}); } catch (_) {}
+    try { if (document.pictureInPictureElement === v) document.exitPictureInPicture().catch(() => {}); } catch (_) {}
+    try { v.pause(); v.removeAttribute('src'); v.load(); } catch (_) {}
+    if (url) { URL.revokeObjectURL(url); url = null; }
+    if (MPBridge.instance === api) MPBridge.instance = null;
+  });
+  ctx.onClose(S.onChange(async () => {
+    if (disposed || !cur) return;
+    try {
+      const n = await S.get(cur.id);
+      if (!n) { cur = null; siblings = []; clearVideo('This video was deleted.'); return; }
+      cur = n; await loadSiblings(); updateButtons();
+    } catch (_) {}
+  }));
+
+  const api = { open };
+  MPBridge.instance = api;
+  const pv = Number(prefs.volume);
+  v.volume = isFinite(pv) ? Math.max(0, Math.min(1, pv)) : 1; v.muted = !!prefs.muted;
+  updateVol(); updatePlay(); updateButtons();
+  S.ready().then(() => {
+    const pending = MPBridge.pending;
+    MPBridge.pending = null;
+    if (pending) open(pending);
+  });
+}
+
 /* ---------- File Manager ---------- */
 function FileManagerApp(body, ctx) {
   const S = FileStore;
@@ -7249,6 +7674,7 @@ function FileManagerApp(body, ctx) {
     if (!n) return;
     if (n.type === 'folder') { go(n.id); return; }
     if (S.isImage(n)) { PhotoViewerAPI.show(n.id); return; }
+    if (VideoFiles.is(n)) { MediaPlayerAPI.show(n.id); return; }
     if (/^(audio|video)\//.test(n.mime || '')) { preview(n); return; }
     if (S.extOf(n.name) === 'zip') { zipOpen(n); return; }
     if (S.isText(n)) { TextEditorAPI.show(n.id); return; }
