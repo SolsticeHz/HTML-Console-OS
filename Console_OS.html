@@ -3,8 +3,9 @@
 
 // To publish an update: change CONSOLE_OS_VERSION (higher number)
 
-var CONSOLE_OS_VERSION = "2026.11.5";
-var CONSOLE_OS_UPDATE_NOTES = "Games and links can now open in normal windows that minimize (right-click, Open in a window). New Favorites section at the top of the Start Menu (right-click, Add to favorites). New Media Player opens videos from File Manager. Embedded sites can no longer redirect the whole OS tab on their own.";
+var CONSOLE_OS_VERSION = "2026.11.7";
+var CONSOLE_OS_UPDATE_NOTES = "Global Chat now uses free public MQTT relays (no message quota) instead of ntfy.sh. The Text Editor now has syntax colouring for HTML, CSS, JavaScript and many other languages, line numbers, find and replace, go to line, auto-indent, auto-closing brackets and tags, comment toggling and more.";
+var CONSOLE_OS_SUGGESTIONS = { googleFormUrl: "", googleEntryMessage: "", formspreeUrl: "https://formspree.io/f/mdeepvqv" };
 var CONSOLE_OS_UPDATE_URL = "https://raw.githubusercontent.com/SolsticeHz/HTML-Console-OS/refs/heads/main/Console_OS.html";
 (function () {
   try {
@@ -1250,17 +1251,58 @@ fullscreen-portal {
 .mp-root:fullscreen .mp-controls .fm-ibtn, .mp-root:fullscreen .mp-seekrow { color: #fff; }
 .mp-root:fullscreen.mp-idle .mp-controls { opacity: 0; pointer-events: none; }
 .mp-root:fullscreen.mp-idle .mp-stage { cursor: none; }
-.te-root { display: flex; flex-direction: column; height: 100%; min-height: 0; }
+.te-root { display: flex; flex-direction: column; height: 100%; min-height: 0;
+  --te-bg: #1e1e1e; --te-fg: #d4d4d4; --te-gutter-bg: #1e1e1e; --te-gutter-fg: #858585; --te-curline: rgba(255,255,255,.06);
+  --te-sel: rgba(58,130,255,.40); --te-findbg: rgba(234,170,0,.30); --te-curbg: rgba(255,140,0,.55); --te-brbg: rgba(120,180,255,.28); --te-brline: rgba(120,180,255,.8);
+  --t-kw: #569cd6; --t-kw2: #c586c0; --t-ty: #4ec9b0; --t-fn: #dcdcaa; --t-str: #ce9178; --t-num: #b5cea8; --t-cm: #6a9955; --t-op: #d4d4d4;
+  --t-tag: #569cd6; --t-attr: #9cdcfe; --t-val: #ce9178; --t-pp: #c586c0; --t-rx: #d16969; --t-esc: #d7ba7d; --t-var: #9cdcfe; --t-hd: #569cd6; --t-bold: #dcdcaa; --t-ital: #ce9178; }
+:root[data-theme="light"] .te-root {
+  --te-bg: #ffffff; --te-fg: #1f1f1f; --te-gutter-bg: #f5f5f5; --te-gutter-fg: #8a8a8a; --te-curline: rgba(0,0,0,.05);
+  --te-sel: rgba(0,100,255,.25); --te-findbg: rgba(255,200,0,.40); --te-curbg: rgba(255,140,0,.55); --te-brbg: rgba(0,100,255,.15); --te-brline: rgba(0,100,255,.7);
+  --t-kw: #0000ff; --t-kw2: #af00db; --t-ty: #267f99; --t-fn: #795e26; --t-str: #a31515; --t-num: #098658; --t-cm: #008000; --t-op: #333333;
+  --t-tag: #800000; --t-attr: #e50000; --t-val: #0451a5; --t-pp: #af00db; --t-rx: #811f3f; --t-esc: #ee0000; --t-var: #001080; --t-hd: #800000; --t-bold: #000000; --t-ital: #a31515; }
 .te-bar { display: flex; gap: 4px; align-items: center; padding: 6px 8px; border-bottom: 1px solid var(--line); background: var(--surface-3); flex-wrap: wrap; }
-.te-name { margin-left: auto; font-size: 12px; color: var(--text-soft); max-width: 38%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.te-area {
-  flex: 1; min-height: 0; width: 100%; box-sizing: border-box; resize: none; border: none; outline: none; padding: 12px 14px;
-  background: var(--surface-1); color: var(--text); font-family: Consolas, "Courier New", monospace; font-size: 14px; line-height: 1.5;
-  tab-size: 4; white-space: pre; overflow: auto;
-}
+.te-name { margin-left: auto; font-size: 12px; color: var(--text-soft); max-width: 30%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.te-root .fm-ibtn.on { background: var(--hover-bg); border-color: var(--accent-color); }
+.te-find { display: flex; gap: 4px; align-items: center; flex-wrap: wrap; padding: 6px 8px; border-bottom: 1px solid var(--line); background: var(--surface-3); }
+.te-find[hidden] { display: none; }
+.te-find .settings-input { flex: 1 1 130px; min-width: 100px; max-width: 220px; height: 26px; box-sizing: border-box; padding: 0 8px; }
+.te-fcount { font-size: 11px; color: var(--text-muted); min-width: 64px; white-space: nowrap; }
+.te-wrap { position: relative; flex: 1; min-height: 0; overflow: hidden; background: var(--te-bg); color: var(--te-fg);
+  --te-digits: 3; --te-gw: calc(var(--te-digits) * 1ch + 22px);
+  font-family: Consolas, "Cascadia Mono", "Courier New", monospace; font-size: var(--te-fs, 14px); line-height: var(--te-lh, 21px);
+  font-variant-ligatures: none; font-kerning: none; letter-spacing: 0; tab-size: var(--te-tab, 4); -moz-tab-size: var(--te-tab, 4); }
+.te-area, .te-hl { position: absolute; top: 0; left: 0; right: 0; bottom: 0; margin: 0; border: 0; box-sizing: border-box; }
+.te-area { z-index: 2; resize: none; outline: none; background: transparent; color: transparent; caret-color: var(--te-fg);
+  padding: 8px 14px 8px calc(var(--te-gw) + 10px); font: inherit; letter-spacing: inherit; tab-size: inherit; -moz-tab-size: inherit;
+  white-space: pre; overflow: auto; width: 100%; height: 100%; }
+.te-area::placeholder { color: var(--text-muted); }
+.te-area::selection { background: var(--te-sel); color: transparent; }
 .te-area.wrap { white-space: pre-wrap; overflow-wrap: anywhere; }
-.te-status { display: flex; gap: 16px; padding: 5px 12px; border-top: 1px solid var(--line); background: var(--surface-3); color: var(--text-muted); font-size: 11px; }
+.te-hl { z-index: 1; overflow: hidden; pointer-events: none; }
+.te-code { display: block; width: max-content; min-width: 100%; box-sizing: border-box; padding: 8px 14px 8px calc(var(--te-gw) + 10px); white-space: pre; }
+.te-code.wrap { width: auto; min-width: 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+.te-code.cv > div { content-visibility: auto; contain-intrinsic-block-size: var(--te-lh, 21px); }
+.te-code > div::after { content: "\200b"; }
+.te-code > div.cl { background: var(--te-curline); }
+.te-gutter { position: absolute; z-index: 3; top: 0; left: 0; bottom: 0; width: var(--te-gw); overflow: hidden; background: var(--te-gutter-bg);
+  border-right: 1px solid var(--line); color: var(--te-gutter-fg); user-select: none; -webkit-user-select: none; cursor: pointer; }
+.te-nums { padding: 8px 10px 8px 0; text-align: right; white-space: pre; will-change: transform; }
+.te-meas { position: absolute; visibility: hidden; pointer-events: none; white-space: pre; top: 0; left: 0; }
+.te-wrap.plain .te-gutter, .te-wrap.plain .te-hl { display: none; }
+.te-wrap.plain .te-area { color: var(--te-fg); padding-left: 14px; }
+.te-code .t-kw { color: var(--t-kw); } .te-code .t-kw2 { color: var(--t-kw2); } .te-code .t-ty { color: var(--t-ty); } .te-code .t-fn { color: var(--t-fn); }
+.te-code .t-str { color: var(--t-str); } .te-code .t-num { color: var(--t-num); } .te-code .t-cm { color: var(--t-cm); font-style: italic; } .te-code .t-op { color: var(--t-op); }
+.te-code .t-tag { color: var(--t-tag); } .te-code .t-attr { color: var(--t-attr); } .te-code .t-val { color: var(--t-val); } .te-code .t-pp { color: var(--t-pp); }
+.te-code .t-rx { color: var(--t-rx); } .te-code .t-esc { color: var(--t-esc); } .te-code .t-var { color: var(--t-var); }
+.te-code .t-hd { color: var(--t-hd); font-weight: bold; } .te-code .t-bold { color: var(--t-bold); font-weight: bold; } .te-code .t-ital { color: var(--t-ital); font-style: italic; }
+.te-code .m-find { background: var(--te-findbg); border-radius: 2px; }
+.te-code .m-cur { background: var(--te-curbg); border-radius: 2px; }
+.te-code .m-br { background: var(--te-brbg); outline: 1px solid var(--te-brline); border-radius: 2px; }
+.te-status { display: flex; gap: 16px; padding: 5px 12px; border-top: 1px solid var(--line); background: var(--surface-3); color: var(--text-muted); font-size: 11px; align-items: center; flex-wrap: wrap; }
 .te-status .te-state { margin-left: auto; }
+.te-status select { height: 20px; font-size: 11px; border-radius: 4px; border: 1px solid var(--line-strong); background: var(--surface-3); color: var(--text-soft); font-family: inherit; cursor: pointer; max-width: 130px; padding: 0 2px; }
+.te-status select option { background: var(--flyout-solid); color: var(--text); }
 
 .chat-online { font-size: 11px; color: var(--text-soft); display: flex; align-items: center; gap: 4px; white-space: nowrap; padding: 2px 8px; border-radius: 10px; background: var(--card-bg-2); border: 1px solid var(--line); }
 .chat-filter-toggle { font-size: 11px; color: var(--text-soft); display: flex; align-items: center; gap: 4px; cursor: pointer; white-space: nowrap; }
@@ -1336,7 +1378,7 @@ fullscreen-portal {
   </div>
   <div class="win-body">
     <div id="vidContain" aria-label="Video player container">
-      <iframe src="https://cleanreel.lovable.app" title="Video Player" id="vid-frame" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen; gamepad" allowfullscreen></iframe>
+      <iframe src="https://cleanreel.lovable.app" title="Video Player" id="vid-frame" sandbox="allow-scripts allow-same-origin allow-forms allow-top-navigation-by-user-activation allow-pointer-lock" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen; gamepad" allowfullscreen></iframe>
     </div>
   </div>
 </div>
@@ -1479,6 +1521,140 @@ const ProfanityFilter = (function() {
   return { addList, removeList, addWords: w => addList("custom", w), clean, has, isOn: () => true, lists: () => Array.from(lists.keys()) };
 })();
 
+/* ===================================================
+   MiniMqtt - a tiny MQTT 5 client over WebSockets (no libraries, no account, no API key).
+   Used by the chat to talk to free public MQTT brokers.
+   =================================================== */
+const MiniMqtt = (function() {
+  const enc = new TextEncoder(), dec = new TextDecoder();
+
+  const u16 = n => [(n >> 8) & 255, n & 255];
+  function varint(n) {
+    const out = [];
+    do { let b = n % 128; n = Math.floor(n / 128); if (n > 0) b |= 128; out.push(b); } while (n > 0);
+    return out;
+  }
+  function readVarint(a, p) {            // returns [value, bytesUsed] or null when the data is incomplete
+    let mul = 1, val = 0, used = 0, b;
+    do {
+      if (p + used >= a.length) return null;
+      b = a[p + used++];
+      val += (b & 127) * mul;
+      mul *= 128;
+      if (used > 4) return null;
+    } while (b & 128);
+    return [val, used];
+  }
+  function str(s) { const b = enc.encode(s); return [...u16(b.length), ...b]; }
+  function packet(first, body) {
+    const head = [first, ...varint(body.length)];
+    const out = new Uint8Array(head.length + body.length);
+    out.set(head, 0); out.set(body, head.length);
+    return out;
+  }
+  const bytesOf = v => v instanceof Uint8Array ? v : enc.encode(String(v));
+
+  function create(o) {
+    let ws = null, buf = new Uint8Array(0), pingTimer = null, ready = false, nextId = 1, lastRx = 0, closed = false;
+
+    function send(u8) { if (ws && ws.readyState === 1) { try { ws.send(u8); return true; } catch (e) {} } return false; }
+
+    function cleanup() {
+      clearInterval(pingTimer); pingTimer = null;
+      const was = ready;
+      ready = false;
+      if (ws) { ws.onopen = ws.onmessage = ws.onerror = ws.onclose = null; try { ws.close(); } catch (e) {} ws = null; }
+      if (!closed) { closed = true; if (o.onclose) o.onclose(was); }
+    }
+
+    function sendConnect() {
+      const will = o.will ? [0, ...str(o.will.topic), ...u16(bytesOf(o.will.payload).length), ...bytesOf(o.will.payload)] : [];
+      const flags = 0x02 | (o.will ? 0x04 : 0);                     // clean start (+ last-will)
+      const body = [...str("MQTT"), 5, flags, ...u16(30), 0, ...str(o.clientId), ...will];
+      send(packet(0x10, Uint8Array.from(body)));
+    }
+
+    function handle(type, flags, body) {
+      if (type === 2) {                                             // CONNACK
+        if (body.length >= 2 && body[1] === 0) {
+          ready = true;
+          lastRx = Date.now();
+          pingTimer = setInterval(() => {
+            if (Date.now() - lastRx > 55000) { cleanup(); return; }  // the broker went quiet
+            send(Uint8Array.of(0xC0, 0));
+          }, 20000);
+          if (o.onopen) o.onopen();
+        } else cleanup();
+      } else if (type === 3) {                                      // PUBLISH
+        const qos = (flags >> 1) & 3, retain = !!(flags & 1);
+        if (body.length < 2) return;
+        const tl = (body[0] << 8) | body[1];
+        let p = 2 + tl;
+        const topic = dec.decode(body.subarray(2, p));
+        if (qos > 0) p += 2;
+        const pl = readVarint(body, p);
+        if (!pl) return;
+        p += pl[1] + pl[0];
+        if (o.onmessage) o.onmessage(topic, body.subarray(p), retain);
+      } else if (type === 14) {                                     // DISCONNECT from the broker
+        cleanup();
+      }
+    }
+
+    function feed(chunk) {
+      const merged = new Uint8Array(buf.length + chunk.length);
+      merged.set(buf, 0); merged.set(chunk, buf.length);
+      buf = merged;
+      for (;;) {
+        if (buf.length < 2) return;
+        const rl = readVarint(buf, 1);
+        if (!rl) { if (buf.length > 5) { cleanup(); } return; }
+        const total = 1 + rl[1] + rl[0];
+        if (buf.length < total) return;
+        const first = buf[0];
+        const body = buf.slice(1 + rl[1], total);
+        buf = buf.slice(total);
+        lastRx = Date.now();
+        handle(first >> 4, first & 15, body);
+        if (closed) return;
+      }
+    }
+
+    function connect() {
+      try { ws = new WebSocket(o.url, "mqtt"); } catch (e) { cleanup(); return; }
+      ws.binaryType = "arraybuffer";
+      ws.onopen = sendConnect;
+      ws.onmessage = ev => { if (ev.data instanceof ArrayBuffer) feed(new Uint8Array(ev.data)); };
+      ws.onerror = () => {};
+      ws.onclose = () => cleanup();
+    }
+
+    const api = {
+      connect,
+      isReady: () => ready,
+      subscribe(filter) {
+        const id = nextId++; if (nextId > 65000) nextId = 1;
+        return send(packet(0x82, Uint8Array.from([...u16(id), 0, ...str(filter), 0])));
+      },
+      publish(topic, payload, opt) {
+        opt = opt || {};
+        const pb = bytesOf(payload);
+        const props = opt.expiry > 0 ? [5, 0x02, (opt.expiry >>> 24) & 255, (opt.expiry >>> 16) & 255, (opt.expiry >>> 8) & 255, opt.expiry & 255] : [0];
+        const t = enc.encode(topic);
+        const body = new Uint8Array(2 + t.length + props.length + pb.length);
+        body.set(u16(t.length), 0); body.set(t, 2); body.set(props, 2 + t.length); body.set(pb, 2 + t.length + props.length);
+        return send(packet(0x30 | (opt.retain ? 1 : 0), body));
+      },
+      close() {
+        if (ready) send(Uint8Array.of(0xE0, 0));
+        cleanup();
+      }
+    };
+    return api;
+  }
+  return { create };
+})();
+
 (function() {
   "use strict";
 
@@ -1487,9 +1663,15 @@ const ProfanityFilter = (function() {
   const CLEAR_KEY = "win11_chat_cleared_at_v1";
   const USER_KEY = "win11_chat_user_id_v1";
 
-  const RELAY_BASE = "https://ntfy.sh";
+  // Free public MQTT brokers (no account, no API key, no fixed message quota). The chat talks to all of them at the
+  // same time, so if one is down or busy the others still carry the messages (duplicates are dropped by message id).
+  const RELAY_BROKERS = [
+    { name: "EMQX",   url: "wss://broker.emqx.io:8084/mqtt" },
+    { name: "HiveMQ", url: "wss://broker.hivemq.com:8884/mqtt" }
+  ];
   const RELAY_TOPIC = "nexus-shift-global-chat-q8w3k7x2m9";
-  const HISTORY_WINDOW = "12h";
+  const TOPIC_ROOT = "nexus-shift/" + RELAY_TOPIC;      // messages: <root>/msg/<id>   presence: <root>/presence   clear: <root>/clear
+  const HISTORY_SECONDS = 12 * 3600;                    // brokers keep recent messages this long so new people see the history
   const MAX_TEXT = 500;
   const MAX_NAME = 20;
   const MAX_MSGS = 100;
@@ -1507,11 +1689,11 @@ const ProfanityFilter = (function() {
     try { localStorage.setItem(USER_KEY, userId); } catch(e) {}
   }
 
-  let es = null;
+  const links = [];
   let isConnected = false;
   let statusLabel = "Connecting...";
   let transport = "Connecting...";
-  let reconnectTimer = null;
+  let renderTimer = null;
   let retryTimer = null;
   const pending = [];
 
@@ -1627,13 +1809,7 @@ const ProfanityFilter = (function() {
   }
   function sendPresence(opts) {
     opts = opts || {};
-    const payload = { type: "win11_chat_presence", id: userId, ts: Date.now(), hello: !!opts.hello, leaving: !!opts.leaving };
-    const url = `${RELAY_BASE}/${RELAY_TOPIC}?cache=no`;
-    if (opts.leaving && navigator.sendBeacon) {
-      try { navigator.sendBeacon(url, JSON.stringify(payload)); } catch (e) {}
-      return;
-    }
-    try { fetch(url, { method: "POST", body: JSON.stringify(payload), keepalive: !!opts.leaving }).catch(() => {}); } catch (e) {}
+    relayPublish({ type: "win11_chat_presence", id: userId, ts: Date.now(), hello: !!opts.hello, leaving: !!opts.leaving }).catch(() => {});
   }
   function onPresence(data, outerTime) {
     if (typeof data.id !== "string" || !data.id || data.id.length > 64 || data.id === userId) return;
@@ -1659,13 +1835,18 @@ const ProfanityFilter = (function() {
     });
   }
 
+  function topicFor(p) {
+    if (p.type === "win11_chat_msg" && p.payload && /^[\w-]{1,64}$/.test(p.payload.id)) return TOPIC_ROOT + "/msg/" + p.payload.id;
+    if (p.type === "win11_chat_clear") return TOPIC_ROOT + "/clear";
+    return TOPIC_ROOT + "/presence";
+  }
   function relayPublish(payload) {
-    return fetch(`${RELAY_BASE}/${RELAY_TOPIC}`, {
-      method: "POST",
-      body: JSON.stringify(payload)
-    }).then(res => {
-      if (!res.ok) throw new Error("Relay HTTP " + res.status);
-    });
+    const topic = topicFor(payload);
+    const opts = payload.type === "win11_chat_presence" ? { retain: false } : { retain: true, expiry: HISTORY_SECONDS };
+    const body = JSON.stringify(payload);
+    let sent = 0;
+    links.forEach(l => { if (l.client && l.client.isReady() && l.client.publish(topic, body, opts)) sent++; });
+    return sent ? Promise.resolve() : Promise.reject(new Error("No relay connected"));
   }
 
   function queueForRetry(payload) {
@@ -1697,58 +1878,74 @@ const ProfanityFilter = (function() {
     });
   }
 
-  function handleRelayEvent(raw) {
-    let outer;
-    try { outer = JSON.parse(raw); } catch(e) { return; }
-    if (!outer || outer.event !== "message" || typeof outer.message !== "string") return;
+  function renderSoon() {
+    if (renderTimer) return;
+    renderTimer = setTimeout(() => { renderTimer = null; renderMessages(); }, 60);   // history can arrive as a burst
+  }
+
+  function handleRelayEvent(bytes) {
+    if (!bytes || !bytes.length) return;           // an empty retained message just deletes old history
     let data;
-    try { data = JSON.parse(outer.message); } catch(e) { return; }
+    try { data = JSON.parse(new TextDecoder().decode(bytes)); } catch(e) { return; }
     if (!data || typeof data !== "object") return;
 
     if (data.type === "win11_chat_msg") {
       const msg = sanitize(data.payload);
-      if (saveMessage(msg)) { renderMessages(); notifyIncoming(msg); }
+      if (saveMessage(msg)) { renderSoon(); notifyIncoming(msg); }
     } else if (data.type === "win11_chat_presence") {
-      onPresence(data, outer.time);
+      onPresence(data);
     } else if (data.type === "win11_chat_clear") {
       const ts = Number(data.ts);
       if (isFinite(ts) && ts > 0) applyClear(Math.min(ts, Date.now()));
     }
   }
 
-  function scheduleReconnect() {
-    if (reconnectTimer) return;
-    reconnectTimer = setTimeout(() => { reconnectTimer = null; connectRelay(); }, 4000);
+  function refreshLinkStatus() {
+    const up = links.filter(l => l.client && l.client.isReady()).map(l => l.name);
+    isConnected = up.length > 0;
+    if (isConnected) {
+      transport = "Public MQTT relay (" + up.join(" + ") + ") + local tabs";
+      updateStatus("Connected (Global Live)");
+    } else if (links.some(l => l.tries > 0)) {
+      transport = "Local tabs only (relay unreachable)";
+      updateStatus("Reconnecting... (Local Tabs Only)", false);
+    } else {
+      updateStatus("Connecting...", false);
+    }
+  }
+
+  function startLink(l) {
+    if (l.client || l.timer) return;
+    l.client = MiniMqtt.create({
+      url: l.url,
+      clientId: "nexus_" + userId.slice(-10) + "_" + Math.random().toString(36).slice(2, 8),
+      will: { topic: TOPIC_ROOT + "/presence", payload: JSON.stringify({ type: "win11_chat_presence", id: userId, ts: Date.now(), leaving: true }) },
+      onopen: () => {
+        l.tries = 0;
+        l.client.subscribe(TOPIC_ROOT + "/#");
+        refreshLinkStatus();
+        flushPending();
+        sendPresence({ hello: true });
+      },
+      onmessage: (topic, bytes, retained) => {
+        if (retained && topic === TOPIC_ROOT + "/presence") return;
+        handleRelayEvent(bytes);
+      },
+      onclose: () => {
+        l.client = null;
+        l.tries++;
+        refreshLinkStatus();
+        const wait = Math.min(30000, 3000 * Math.pow(2, Math.min(l.tries - 1, 4)));
+        l.timer = setTimeout(() => { l.timer = null; startLink(l); }, wait);
+      }
+    });
+    l.client.connect();
   }
 
   function connectRelay() {
-    if (es) { try { es.close(); } catch(e) {} es = null; }
-    updateStatus("Connecting...", false);
-    try {
-      es = new EventSource(`${RELAY_BASE}/${RELAY_TOPIC}/sse?since=${HISTORY_WINDOW}`);
-    } catch(e) {
-      isConnected = false;
-      transport = "Local tabs only (relay unavailable)";
-      updateStatus("Offline (Local Tabs Only)", false);
-      scheduleReconnect();
-      return;
-    }
-
-    es.onopen = () => {
-      isConnected = true;
-      transport = "ntfy.sh public relay (global) + local tabs";
-      updateStatus("Connected (Global Live)");
-      flushPending();
-      sendPresence({ hello: true });
-    };
-    es.onmessage = evt => handleRelayEvent(evt.data);
-    es.onerror = () => {
-      isConnected = false;
-      transport = "Local tabs only (relay unreachable)";
-      updateStatus("Reconnecting... (Local Tabs Only)", false);
-
-      if (es && es.readyState === 2) scheduleReconnect();
-    };
+    if (!links.length) RELAY_BROKERS.forEach(b => links.push({ name: b.name, url: b.url, client: null, timer: null, tries: 0 }));
+    links.forEach(l => { if (l.timer) { clearTimeout(l.timer); l.timer = null; } startLink(l); });
+    refreshLinkStatus();
   }
 
   SYNC_BROADCAST.onmessage = (event) => {
@@ -1792,12 +1989,21 @@ const ProfanityFilter = (function() {
     renderMessages();
   }
 
+  function wipeRelayHistory(ids) {
+    ids.forEach(id => {
+      if (!/^[\w-]{1,64}$/.test(id)) return;
+      links.forEach(l => { if (l.client && l.client.isReady()) l.client.publish(TOPIC_ROOT + "/msg/" + id, "", { retain: true }); });
+    });
+  }
+
   function clearChat(broadcast) {
     const ts = Date.now();
+    const wipeIds = getStoredMessages().map(m => m.id);
     applyClear(ts);
     if (broadcast) {
       try { SYNC_BROADCAST.postMessage({ type: "chat_clear", ts: ts }); } catch(e) {}
       publish({ type: "win11_chat_clear", origin: userId, ts: ts });
+      wipeRelayHistory(wipeIds);
     }
   }
 
@@ -2137,7 +2343,7 @@ const Sounds = (function() {
 const ThemeStore = (function() {
   const KEY = "win11_themes_v1";
   const MAX_THEMES = 24;
-  const MAX_BG_CHARS = 700000;
+  const MAX_BG_CHARS = 2300000;   // a wallpaper already prepared by WallpaperTools is at most ~2 MB, so it fits as-is
   const builtin = [
     { id: "b-default", name: "Console Default", background: "default",   bgType: "preset", accentColor: "#60CDFF" },
     { id: "b-neon",    name: "Neon Nights",     background: "linear-gradient(135deg, #0f0c29, #302b63, #24243e)", bgType: "preset", accentColor: "#e84393" },
@@ -2176,7 +2382,7 @@ const ThemeStore = (function() {
                     name, background: look.background, bgType: look.bgType || "preset", accentColor: look.accentColor, created: Date.now() };
     const before = custom.slice();
     if (existing) custom[custom.indexOf(existing)] = theme; else custom.push(theme);
-    if (!persist()) { custom = before; return { ok: false, error: "Browser storage is full, so the theme couldn't be saved." }; }
+    if (!persist()) { custom = before; return { ok: false, full: true, error: "Browser storage is full, so the theme couldn't be saved." }; }
     return { ok: true, replaced: !!existing, theme };
   }
   function remove(id) { custom = custom.filter(t => t.id !== id); persist(); }
@@ -2270,7 +2476,7 @@ const WallpaperTools = (function() {
     }
     return { ok: false, info: r };
   }
-  return { prepare, applyFile, mb, TARGET };
+  return { prepare, applyFile, mb, TARGET, FALLBACKS, shrinkDataUrl: squeeze };
 })();
 
 const DataBackup = (function() {
@@ -2353,7 +2559,8 @@ const PerfStorage = (function() {
     "win11_chat_user_id_v1": "Anonymous ID for this device, so your own past chat messages are recognised",
     "win11_themes_v1": "Themes you saved (wallpaper + accent colour)",
     "win11_notifications_v1": "Notification centre history and the Do Not Disturb setting",
-    "win11_favorites_v1": "Start Menu favorites: the apps and games you starred"
+    "win11_favorites_v1": "Start Menu favorites: the apps and games you starred",
+    "win11_suggestions_sent_v1": "Record of suggestions you sent from the Suggestion Box (kept on this device only)"
   };
 
   let fpsVal = null, fpsSampling = false, batteryText = null;
@@ -2966,15 +3173,24 @@ SettingsManager.registerTab({
       const btn = q("#thSave");
       btn.disabled = true;
       let bg = settings.background, bgType = settings.bgType || "preset";
-      // A big uploaded wallpaper would not fit in localStorage next to everything else, so keep a smaller copy.
-      if (typeof bg === "string" && bg.startsWith("data:") && bg.length > 250000) {
-        say("Shrinking your wallpaper for the theme…");
-        bg = await ThemeStore.shrinkImage(bg, 1280, 0.72);
+      // The wallpaper in settings was already compressed when it was uploaded, so it is saved into the theme exactly as it is.
+      const look = b => ({ background: b, bgType, accentColor: settings.accentColor });
+      let res = ThemeStore.add(q("#thName").value, look(bg));
+      let shrunk = false;
+      // Only if browser storage is genuinely full do we fall back to the same stepped sizes the wallpaper uploader uses.
+      if (!res.ok && res.full && typeof bg === "string" && bg.startsWith("data:")) {
+        for (const target of WallpaperTools.FALLBACKS) {
+          if (bg.length <= target) continue;
+          say("Storage is nearly full, fitting the wallpaper a little smaller…");
+          const smaller = await WallpaperTools.shrinkDataUrl(bg, target);
+          res = ThemeStore.add(q("#thName").value, look(smaller));
+          if (res.ok) { shrunk = true; break; }
+          if (!res.full) break;
+        }
       }
-      const res = ThemeStore.add(q("#thName").value, { background: bg, bgType, accentColor: settings.accentColor });
       btn.disabled = false;
       if (!res.ok) { say(res.error, true); return; }
-      if (typeof Notify !== "undefined") Notify.push({ title: res.replaced ? "Theme updated" : "Theme saved", body: "“" + res.theme.name + "” is in Settings → Themes.", icon: "🎭" });
+      if (typeof Notify !== "undefined") Notify.push({ title: res.replaced ? "Theme updated" : "Theme saved", body: "“" + res.theme.name + "” is in Settings → Themes." + (shrunk ? " The wallpaper was reduced a little because browser storage was nearly full." : ""), icon: "🎭" });
       SettingsManager.open("themes");
     }
     q("#thSave").addEventListener("click", saveTheme);
@@ -3048,6 +3264,110 @@ SettingsManager.registerTab({
   icon: "📊",
   render: function(container) {
     PerfStorage.render(container);
+  }
+});
+
+/* ===================================================
+   Suggestion Box (sends to the owner's own Google Form or Formspree inbox, configured at the top of this file)
+   =================================================== */
+const SuggestionBox = (function() {
+  const KEY = "win11_suggestions_sent_v1";
+  const MAX_LEN = 1000, COOLDOWN_MS = 30000, DAILY_MAX = 5;
+  const cfg = (typeof CONSOLE_OS_SUGGESTIONS === "object" && CONSOLE_OS_SUGGESTIONS) || {};
+  const CATS = ["Idea", "Bug", "Game / app request", "Other"];
+  let lastSent = 0;
+
+  function googleUrl() {
+    const m = /^https:\/\/docs\.google\.com\/forms\/d\/e\/([\w-]+)/.exec(String(cfg.googleFormUrl || "").trim());
+    return m ? "https://docs.google.com/forms/d/e/" + m[1] + "/formResponse" : "";
+  }
+  const googleEntry = () => /^entry\.\d+$/.test(String(cfg.googleEntryMessage || "").trim()) ? cfg.googleEntryMessage.trim() : "";
+  const formspreeUrl = () => /^https:\/\/formspree\.io\/f\/[\w-]+$/.test(String(cfg.formspreeUrl || "").trim()) ? cfg.formspreeUrl.trim() : "";
+  const configured = () => !!(googleUrl() && googleEntry()) || !!formspreeUrl();
+
+  function history() { try { const a = JSON.parse(localStorage.getItem(KEY) || "[]"); return Array.isArray(a) ? a : []; } catch (e) { return []; } }
+  function saveHistory(a) { try { localStorage.setItem(KEY, JSON.stringify(a.slice(0, 10))); } catch (e) {} }
+  function clearHistory() { try { localStorage.removeItem(KEY); } catch (e) {} }
+
+  async function send(category, text, contact) {
+    text = String(text || "").trim().slice(0, MAX_LEN);
+    contact = String(contact || "").trim().slice(0, 100);
+    if (text.length < 5) return { ok: false, error: "Write a little more so the suggestion makes sense." };
+    if (!configured()) return { ok: false, error: "The suggestion box isn't set up yet." };
+    const now = Date.now();
+    if (now - lastSent < COOLDOWN_MS) return { ok: false, error: "Please wait a few seconds before sending another." };
+    const today = history().filter(h => now - h.t < 86400000);
+    if (today.length >= DAILY_MAX) return { ok: false, error: "That's the limit for today. Thanks for all the ideas!" };
+    const ctl = new AbortController();
+    const timer = setTimeout(() => ctl.abort(), 15000);
+    try {
+      if (formspreeUrl()) {
+        const r = await fetch(formspreeUrl(), { method: "POST", signal: ctl.signal,
+          headers: { "Content-Type": "application/json", "Accept": "application/json" },
+          body: JSON.stringify({ category, message: text, contact: contact || "(none)", version: CONSOLE_OS_VERSION, _gotcha: "" }) });
+        if (!r.ok) throw new Error("bad status");
+      } else {
+        const body = "[" + category + "] " + text + "\n\nContact: " + (contact || "(none)") + "\nVersion: " + CONSOLE_OS_VERSION;
+        // Google Forms doesn't allow reading the reply, so a request that leaves the browser without an error counts as sent.
+        await fetch(googleUrl(), { method: "POST", mode: "no-cors", signal: ctl.signal, body: new URLSearchParams({ [googleEntry()]: body }) });
+      }
+    } catch (e) {
+      return { ok: false, error: navigator.onLine ? "Couldn't send that. Try again in a moment." : "You're offline. Your text is still here, try again when you're back online." };
+    } finally { clearTimeout(timer); }
+    lastSent = now;
+    const h = history(); h.unshift({ t: now, c: category, m: text.slice(0, 300) }); saveHistory(h);
+    return { ok: true };
+  }
+  return { send, configured, history, clearHistory, CATS, MAX_LEN };
+})();
+
+SettingsManager.registerTab({
+  id: "suggestions",
+  label: "Suggestions",
+  icon: "💡",
+  render: function(container) {
+    const q = s => container.querySelector(s);
+    const ready = SuggestionBox.configured();
+    container.innerHTML = `
+      <div class="settings-section-title">Suggestion Box</div>
+      <div class="settings-card">
+        <div class="settings-card-header">Send a suggestion</div>
+        <div class="settings-card-desc">${ready ? "Got an idea, a bug, or a game or app you'd like added? Send it here and the owner will read it. No account needed." : "The suggestion box isn't available right now. Check back after the next update."}</div>
+        <select id="sbCat" class="settings-input" style="flex: none;" ${ready ? "" : "disabled"}>${SuggestionBox.CATS.map(c => `<option>${escapeHtml(c)}</option>`).join("")}</select>
+        <textarea id="sbText" class="settings-input" maxlength="${SuggestionBox.MAX_LEN}" placeholder="Type your suggestion…" style="min-height: 110px; resize: vertical; font-family: inherit; width: 100%; box-sizing: border-box;" ${ready ? "" : "disabled"}></textarea>
+        <input type="text" id="sbContact" class="settings-input" maxlength="100" placeholder="Contact (optional, leave blank to stay anonymous)" ${ready ? "" : "disabled"} />
+        <div class="settings-row">
+          <span class="settings-card-desc" id="sbCount">0 / ${SuggestionBox.MAX_LEN}</span>
+          <button id="sbSend" class="settings-btn" ${ready ? "" : "disabled"}>Send suggestion</button>
+        </div>
+        <div class="settings-msg" id="sbMsg"></div>
+      </div>
+      <div class="settings-card">
+        <div class="settings-card-header">Sent from this device</div>
+        <div id="sbHist"></div>
+        <div class="ps-actions"><button id="sbClear" class="settings-btn settings-btn-secondary">Clear this list</button></div>
+      </div>`;
+    const msg = q("#sbMsg"), say = (t, err) => { msg.textContent = t; msg.classList.toggle("err", !!err); };
+    function drawHist() {
+      const h = SuggestionBox.history(), box = q("#sbHist");
+      box.innerHTML = h.length ? h.map(x => `<div class="settings-card-desc" style="padding: 4px 0;"><b>${escapeHtml(x.c)}</b> · ${escapeHtml(new Date(x.t).toLocaleString())}<br>${escapeHtml(x.m)}</div>`).join("")
+                               : '<div class="settings-card-desc">Nothing sent yet.</div>';
+      q("#sbClear").style.display = h.length ? "" : "none";
+    }
+    drawHist();
+    q("#sbText").addEventListener("input", e => { q("#sbCount").textContent = e.target.value.length + " / " + SuggestionBox.MAX_LEN; });
+    q("#sbClear").addEventListener("click", () => { SuggestionBox.clearHistory(); drawHist(); });
+    q("#sbSend").addEventListener("click", async () => {
+      const btn = q("#sbSend");
+      btn.disabled = true; say("Sending…");
+      const r = await SuggestionBox.send(q("#sbCat").value, q("#sbText").value, q("#sbContact").value);
+      btn.disabled = false;
+      if (!r.ok) { say(r.error, true); return; }
+      q("#sbText").value = ""; q("#sbCount").textContent = "0 / " + SuggestionBox.MAX_LEN;
+      say("Sent. Thank you!");
+      drawHist();
+      if (typeof Notify !== "undefined") Notify.push({ title: "Suggestion sent", body: "Thanks for helping make this better.", icon: "💡" });
+    });
   }
 });
 
@@ -4520,7 +4840,7 @@ const PortalWindows = (function() {
       </div>`;
     const frame = body.querySelector('.rn-frame');
     frame.title = item.name;
-    frame.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-forms allow-popups allow-top-navigation-by-user-activation allow-pointer-lock');
+    frame.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-forms allow-top-navigation-by-user-activation allow-pointer-lock');
     frame.setAttribute('allow', 'autoplay; encrypted-media; fullscreen; picture-in-picture; clipboard-write; gamepad; accelerometer; gyroscope');
     frame.src = item.url;
     body.querySelector('[data-a="reload"]').addEventListener('click', () => { frame.src = item.url; });
@@ -5646,7 +5966,7 @@ class FullscreenPortal extends HTMLElement {
     iframe.className = this._randomAttr(16);
     iframe.style.cssText = this._frameCss(iframe._z);
     iframe.setAttribute(this._randomAttr(10), "true");
-    iframe.setAttribute("sandbox", "allow-scripts allow-same-origin allow-forms allow-popups allow-top-navigation-by-user-activation allow-pointer-lock");
+    iframe.setAttribute("sandbox", "allow-scripts allow-same-origin allow-forms allow-top-navigation-by-user-activation allow-pointer-lock");
     iframe.setAttribute("allow", "autoplay; encrypted-media; fullscreen; picture-in-picture; clipboard-write; gamepad; accelerometer; gyroscope");
     iframe.setAttribute("allowfullscreen", "");
     iframe.src = url;
@@ -6776,7 +7096,7 @@ const HtmlRunner = {
           <span class="rn-note">Sandboxed: this page can't access your desktop data</span>
         </div>
         <iframe class="rn-frame" title="Sandboxed page"
-          sandbox="allow-scripts allow-forms allow-popups allow-modals allow-pointer-lock allow-downloads"
+          sandbox="allow-scripts allow-forms allow-modals allow-pointer-lock allow-downloads"
           allow="fullscreen; autoplay; gamepad; clipboard-write; encrypted-media; accelerometer; gyroscope; picture-in-picture" allowfullscreen></iframe>
         <div class="rn-msg" hidden></div>
       </div>`;
@@ -7946,12 +8266,443 @@ function FileManagerApp(body, ctx) {
   }).catch(fail);
 }
 
+/* ===================================================
+   CodeHighlighter - turns source text into colour-classed tokens for the Text Editor.
+   tokenize(text, langKey) -> [[cls, text], ...]  (the pieces always add up to exactly the original text)
+   =================================================== */
+const CodeHighlighter = (function() {
+  const W = s => new Set(s.split(/\s+/).filter(Boolean));
+  const CTRL_RX = W("return typeof case do else in of void delete throw new yield await instanceof");
+
+  const JS_KW = "break case catch class const continue debugger default delete do else export extends finally for function if import in instanceof let new of return static super switch throw try typeof var void while with yield async await";
+  const TS_KW = JS_KW + " interface type enum namespace declare abstract implements private public protected readonly keyof is as unknown never any module override satisfies";
+  const BUILTIN_TY = "Object Array String Number Boolean Symbol Map Set WeakMap WeakSet Promise Date Math JSON RegExp Error window document console";
+
+  const LANGS = {
+    js:   { name: "JavaScript", lc: ["//"], bc: ["/*", "*/"], strs: "\"'`", kw: W(JS_KW), kw2: W("true false null undefined NaN Infinity this super arguments"), ty: W(BUILTIN_TY), rx: true, caps: true, pairs: true },
+    ts:   { name: "TypeScript", lc: ["//"], bc: ["/*", "*/"], strs: "\"'`", kw: W(TS_KW), kw2: W("true false null undefined NaN Infinity this super arguments"), ty: W(BUILTIN_TY + " string number boolean void any unknown never"), rx: true, caps: true, pairs: true, at: /@[A-Za-z_]\w*/y },
+    json: { name: "JSON", lc: ["//"], bc: ["/*", "*/"], strs: "\"", kw: W(""), kw2: W("true false null"), jsonKeys: true, pairs: true },
+    java: { name: "Java", lc: ["//"], bc: ["/*", "*/"], strs: "\"'", kw: W("abstract assert boolean break byte case catch char class const continue default do double else enum extends final finally float for goto if implements import instanceof int interface long native new package private protected public return short static strictfp super switch synchronized this throw throws transient try void volatile while var record"), kw2: W("true false null this super"), ty: W("String Object Integer List Map Set System"), caps: true, pairs: true, at: /@[A-Za-z_]\w*/y },
+    c:    { name: "C", lc: ["//"], bc: ["/*", "*/"], strs: "\"'", kw: W("auto break case char const continue default do double else enum extern float for goto if inline int long register restrict return short signed sizeof static struct switch typedef union unsigned void volatile while"), kw2: W("true false NULL"), caps: false, pp: true, pairs: true },
+    cpp:  { name: "C++", lc: ["//"], bc: ["/*", "*/"], strs: "\"'", kw: W("alignas alignof auto bool break case catch char class const constexpr continue decltype default delete do double dynamic_cast else enum explicit export extern float for friend goto if inline int long mutable namespace new noexcept operator override private protected public register reinterpret_cast return short signed sizeof static static_cast struct switch template this throw try typedef typeid typename union unsigned using virtual void volatile while final const_cast"), kw2: W("true false NULL nullptr"), ty: W("std string vector map set size_t"), caps: true, pp: true, pairs: true },
+    cs:   { name: "C#", lc: ["//"], bc: ["/*", "*/"], strs: "\"'", kw: W("abstract as base bool break byte case catch char checked class const continue decimal default delegate do double else enum event explicit extern finally fixed float for foreach goto if implicit in int interface internal is lock long namespace new object operator out override params private protected public readonly ref return sbyte sealed short sizeof stackalloc static string struct switch this throw try typeof uint ulong unchecked unsafe ushort using var virtual void volatile while async await record"), kw2: W("true false null this base"), caps: true, pairs: true, pp: true },
+    go:   { name: "Go", lc: ["//"], bc: ["/*", "*/"], strs: "\"'`", kw: W("break default func interface select case defer go map struct chan else goto package switch const fallthrough if range type continue for import return var"), kw2: W("true false nil iota"), ty: W("string int int8 int16 int32 int64 uint uint8 uint16 uint32 uint64 float32 float64 bool byte rune error any"), caps: false, pairs: true },
+    rs:   { name: "Rust", lc: ["//"], bc: ["/*", "*/"], strs: "\"'", kw: W("as async await break const continue crate dyn else enum extern fn for if impl in let loop match mod move mut pub ref return static struct super trait type unsafe use where while"), kw2: W("true false self Self None Some Ok Err"), ty: W("i8 i16 i32 i64 i128 isize u8 u16 u32 u64 u128 usize f32 f64 bool char str String Vec Option Result Box"), caps: true, pairs: true, lifetime: true, macro: true, attrRe: /#!?\[[^\]\n]*\]/y },
+    php:  { name: "PHP", lc: ["//", "#"], bc: ["/*", "*/"], strs: "\"'", kw: W("abstract and array as break callable case catch class clone const continue declare default do echo else elseif empty enddeclare endfor endforeach endif endswitch endwhile extends final finally fn for foreach function global goto if implements include include_once instanceof insteadof interface isset list match namespace new or print private protected public require require_once return static switch throw trait try unset use var while xor yield"), kw2: W("true false null TRUE FALSE NULL self parent"), caps: true, pairs: true, ci: true, extra: [[/<\?(?:php|=)?|\?>/y, "pp"], [/\$[A-Za-z_]\w*/y, "var"]] },
+    rb:   { name: "Ruby", lc: ["#"], bc: null, strs: "\"'", kw: W("alias and begin break case class def defined? do else elsif end ensure for if in module next not or redo rescue retry return super then undef unless until when while yield puts require require_relative attr_accessor attr_reader attr_writer"), kw2: W("true false nil self"), caps: true, pairs: true, extra: [[/@@?[A-Za-z_]\w*/y, "var"], [/(?<![:\w]):[A-Za-z_]\w*[?!]?/y, "kw2"]] },
+    py:   { name: "Python", lc: ["#"], bc: null, strs: "\"'", tq: ["\"\"\"", "'''"], kw: W("and as assert async await break class continue def del elif else except finally for from global if import in is lambda nonlocal not or pass raise return try while with yield"), kw2: W("True False None self cls"), ty: W("int str float bool list dict set tuple bytes object type"), caps: true, pairs: true, strPrefix: true, at: /@[A-Za-z_][\w.]*/y, indentColon: true },
+    sh:   { name: "Shell", lc: ["#"], lcWs: true, bc: null, strs: "\"'`", kw: W("if then else elif fi for while until do done case esac in function select time return exit break continue local export readonly declare unset shift source alias set echo cd"), kw2: W("true false"), pairs: true, extra: [[/\$(?:\{[^}\n]*\}|[A-Za-z_]\w*|[0-9#?@*$!-])/y, "var"]] },
+    bat:  { name: "Batch", lc: ["::", "rem "], lcLine: true, bc: null, strs: "\"", ci: true, kw: W("if else for in do goto call echo set exit not exist defined errorlevel setlocal endlocal pause cd copy del dir move md mkdir rd rmdir type ren start cls title"), kw2: W("on off"), pairs: false, extra: [[/%[^%\s]+%|%%?~?[A-Za-z0-9]/y, "var"], [/:[A-Za-z_]\w*/y, "fn", true]] },
+    sql:  { name: "SQL", lc: ["--"], bc: ["/*", "*/"], strs: "'\"`", ci: true, kw: W("select from where insert into values update set delete create table alter drop index join inner left right outer full cross on group by order having limit offset union all distinct as and or not is in like between exists case when then else end primary key foreign references default unique check constraint view database use begin commit rollback transaction add column if with asc desc"), kw2: W("true false null"), ty: W("int integer bigint smallint tinyint varchar char text date datetime timestamp boolean decimal numeric float double real blob serial"), pairs: true },
+    yml:  { name: "YAML", lc: ["#"], lcWs: true, bc: null, strs: "\"'", kw: W(""), kw2: W("true false null yes no on off"), keyColon: true, identRe: /[A-Za-z_][\w.\-]*/y, pairs: true, indentColon: true },
+    ini:  { name: "INI / Config", lc: ["#", ";"], lcWs: true, bc: null, strs: "\"'", kw: W(""), kw2: W("true false on off yes no"), keyEq: true, sect: true, identRe: /[A-Za-z_][\w.\-]*/y, pairs: false },
+    tex:  { name: "LaTeX", lc: ["%"], bc: null, strs: "", kw: W(""), kw2: W(""), nums: false, pairs: false, extra: [[/\\[A-Za-z@]+\*?|\\[^A-Za-z\s]/y, "kw"], [/\$\$[^$]*\$\$|\$[^$\n]*\$/y, "str"]] },
+    css:  { name: "CSS", special: "css", lc: null, bc: ["/*", "*/"], pairs: true },
+    html: { name: "HTML", special: "html", pairs: true },
+    xml:  { name: "XML", special: "xml", pairs: true },
+    md:   { name: "Markdown", special: "md", pairs: false },
+    text: { name: "Plain Text", plain: true, pairs: false }
+  };
+  const ORDER = ["text", "html", "css", "js", "ts", "json", "xml", "md", "py", "java", "c", "cpp", "cs", "go", "rs", "php", "rb", "sh", "bat", "sql", "yml", "ini", "tex"];
+
+  const EXT = { txt: "text", log: "text", csv: "text", tsv: "text", note: "text", js: "js", mjs: "js", cjs: "js", jsx: "js", ts: "ts", tsx: "ts", json: "json", jsonc: "json",
+    html: "html", htm: "html", xhtml: "html", css: "css", xml: "xml", svg: "xml", md: "md", markdown: "md", py: "py", java: "java", c: "c", h: "c", cpp: "cpp", cc: "cpp", hpp: "cpp",
+    cs: "cs", go: "go", rs: "rs", php: "php", rb: "rb", sh: "sh", bash: "sh", bat: "bat", cmd: "bat", sql: "sql", yml: "yml", yaml: "yml", ini: "ini", cfg: "ini", conf: "ini", toml: "ini", tex: "tex" };
+  const ALIAS = { javascript: "js", node: "js", typescript: "ts", python: "py", py3: "py", shell: "sh", bash: "sh", zsh: "sh", console: "sh", yaml: "yml", csharp: "cs", "c#": "cs", "c++": "cpp", golang: "go", rust: "rs", ruby: "rb", markdown: "md", htm: "html" };
+
+  function langForName(name) {
+    const m = /\.([A-Za-z0-9]+)$/.exec(String(name || ""));
+    return (m && EXT[m[1].toLowerCase()]) || "text";
+  }
+  const resolve = k => LANGS[k] ? k : (LANGS[ALIAS[String(k || "").toLowerCase()]] ? ALIAS[String(k).toLowerCase()] : (LANGS[EXT[String(k || "").toLowerCase()]] ? EXT[String(k).toLowerCase()] : "text"));
+
+  const reNum = /0[xX][\da-fA-F_]+|0[bB][01_]+|\d[\d_]*(?:\.\d+)?(?:[eE][+-]?\d+)?|\.\d+(?:[eE][+-]?\d+)?/y;
+  const reIdentDefault = /[A-Za-z_$][\w$]*/y;
+  const reSpace = /[ \t\r\n]+/y;
+  const reOps = /[+\-*\/%=<>!&|^~?:.,;]+/y;
+
+  function out() {
+    const toks = [];
+    return { toks, push(cls, text) {
+      if (!text) return;
+      const last = toks[toks.length - 1];
+      if (last && last[0] === cls) last[1] += text; else toks.push([cls, text]);
+    } };
+  }
+
+  /* ---------- generic scanner (most programming languages) ---------- */
+  function scanCode(text, cfg) {
+    const o = out(), n = text.length;
+    let i = 0, prevCh = "", prevWord = "";
+    const lcList = cfg.lc || [];
+    const isLineStart = p => { let k = p - 1; while (k >= 0 && (text[k] === " " || text[k] === "\t")) k--; return k < 0 || text[k] === "\n"; };
+    const startsAt = (tok, p) => cfg.ci ? text.substr(p, tok.length).toLowerCase() === tok : text.startsWith(tok, p);
+    const identRe = cfg.identRe || reIdentDefault;
+    const sticky = (re, p) => { re.lastIndex = p; return re.exec(text); };
+
+    function scanString(q, p) {
+      let j = p + 1;
+      const multi = q === "`" && cfg.strs.indexOf("`") >= 0 && cfg.name !== "Shell" && cfg.name !== "SQL" ? true : (q === "`" && (cfg.name === "Go" || cfg.name === "Shell" || cfg.name === "SQL"));
+      while (j < n) {
+        const c = text[j];
+        if (c === "\\" && cfg.name !== "Batch" && cfg.name !== "SQL") { j += 2; continue; }
+        if (c === q) { j++; break; }
+        if (c === "\n" && !multi) break;
+        j++;
+      }
+      return Math.min(j, n);
+    }
+
+    while (i < n) {
+      const c = text[i];
+      let m;
+
+      if (c === " " || c === "\t" || c === "\n" || c === "\r") { m = sticky(reSpace, i); o.push("", m[0]); i += m[0].length; continue; }
+
+      // comments
+      let hit = false;
+      for (let k = 0; k < lcList.length; k++) {
+        const tok = lcList[k];
+        if (!startsAt(tok, i)) continue;
+        if (cfg.lcWs && i > 0 && !/[\s;]/.test(text[i - 1])) continue;
+        if (cfg.lcLine && !isLineStart(i)) continue;
+        let e = text.indexOf("\n", i); if (e < 0) e = n;
+        o.push("cm", text.slice(i, e)); i = e; hit = true; break;
+      }
+      if (hit) continue;
+      if (cfg.bc && text.startsWith(cfg.bc[0], i)) {
+        let e = text.indexOf(cfg.bc[1], i + cfg.bc[0].length); e = e < 0 ? n : e + cfg.bc[1].length;
+        o.push("cm", text.slice(i, e)); i = e; continue;
+      }
+
+      // preprocessor / attributes / extras
+      if (cfg.pp && c === "#" && isLineStart(i)) {
+        m = /#[ \t]*[A-Za-z_]+/y; m.lastIndex = i; const r = m.exec(text);
+        if (r) {
+          o.push("pp", r[0]); i += r[0].length;
+          if (/include|import/.test(r[0])) { const inc = sticky(/[ \t]*<[^>\n]+>/y, i); if (inc) { o.push("", inc[0].match(/^[ \t]*/)[0]); o.push("str", inc[0].trim()); i += inc[0].length; } }
+          continue;
+        }
+      }
+      if (cfg.attrRe) { m = sticky(cfg.attrRe, i); if (m) { o.push("pp", m[0]); i += m[0].length; continue; } }
+      if (cfg.at && c === "@") { m = sticky(cfg.at, i); if (m) { o.push("pp", m[0]); i += m[0].length; continue; } }
+      if (cfg.extra) {
+        let done = false;
+        for (let k = 0; k < cfg.extra.length; k++) {
+          const ex = cfg.extra[k];
+          if (ex[2] && !isLineStart(i)) continue;
+          m = sticky(ex[0], i);
+          if (m && m[0].length) { o.push(ex[1], m[0]); i += m[0].length; prevCh = m[0][m[0].length - 1]; prevWord = ""; done = true; break; }
+        }
+        if (done) continue;
+      }
+      if (cfg.sect && c === "[" && isLineStart(i)) { m = sticky(/\[[^\]\n]*\]/y, i); if (m) { o.push("tag", m[0]); i += m[0].length; continue; } }
+
+      // strings
+      if (cfg.strPrefix && /[rRbBuUfF]/.test(c)) {
+        m = sticky(/[rRbBuUfF]{1,2}(?=["'])/y, i);
+        if (m) { o.push("str", m[0]); i += m[0].length; continue; }
+      }
+      if (cfg.tq) {
+        const tq = cfg.tq.find(t => text.startsWith(t, i));
+        if (tq) { let e = text.indexOf(tq, i + 3); e = e < 0 ? n : e + 3; o.push("str", text.slice(i, e)); i = e; prevCh = '"'; prevWord = ""; continue; }
+      }
+      if (cfg.strs && cfg.strs.indexOf(c) >= 0) {
+        if (cfg.lifetime && c === "'") {
+          m = sticky(/'[A-Za-z_]\w*(?!['\w])/y, i);
+          if (m) { o.push("kw2", m[0]); i += m[0].length; prevCh = "a"; prevWord = ""; continue; }
+        }
+        const e = scanString(c, i);
+        const raw = text.slice(i, e);
+        if (cfg.jsonKeys) {
+          const after = sticky(/[ \t]*:/y, e);
+          o.push(after ? "attr" : "str", raw);
+        } else o.push("str", raw);
+        i = e; prevCh = c; prevWord = ""; continue;
+      }
+
+      // regex literal (JS / TS)
+      if (cfg.rx && c === "/") {
+        const allowed = prevCh === "" || "([{,;:=!&|?+-*%<>~^".indexOf(prevCh) >= 0 || (prevWord && CTRL_RX.has(prevWord));
+        if (allowed) {
+          let j = i + 1, inCls = false, okRx = false;
+          while (j < n) {
+            const d = text[j];
+            if (d === "\n") break;
+            if (d === "\\") { j += 2; continue; }
+            if (d === "[") inCls = true; else if (d === "]") inCls = false;
+            else if (d === "/" && !inCls) { okRx = true; j++; break; }
+            j++;
+          }
+          if (okRx && j - i > 2) {
+            m = sticky(/[a-z]*/y, j); j += m[0].length;
+            o.push("rx", text.slice(i, j)); i = j; prevCh = "a"; prevWord = ""; continue;
+          }
+        }
+      }
+
+      // YAML / INI keys
+      if ((cfg.keyColon || cfg.keyEq) && /[A-Za-z_]/.test(c)) {
+        m = sticky(identRe, i);
+        if (m) {
+          const after = sticky(cfg.keyColon ? /[ \t]*:(?=[ \t]|$|\n)/y : /[ \t]*=/y, i + m[0].length);
+          if (after && isLineStartLoose(text, i)) { o.push("attr", m[0]); i += m[0].length; prevCh = "a"; prevWord = ""; continue; }
+        }
+      }
+
+      // numbers
+      if (cfg.nums !== false && (c >= "0" && c <= "9" || (c === "." && text[i + 1] >= "0" && text[i + 1] <= "9" && !/[\w)\]]/.test(prevCh)))) {
+        m = sticky(reNum, i);
+        if (m) { let len = m[0].length; const suf = sticky(/[uUlLfFnN]{1,3}\b/y, i + len); if (suf && !/^0[xX]/.test(m[0])) len += suf[0].length; o.push("num", text.slice(i, i + len)); i += len; prevCh = "1"; prevWord = ""; continue; }
+      }
+
+      // words
+      m = sticky(identRe, i);
+      if (m && (identRe !== reIdentDefault || /[A-Za-z_$]/.test(c))) {
+        const w = m[0], key = cfg.ci ? w.toLowerCase() : w;
+        const next = text[i + w.length];
+        let cls = "";
+        if (cfg.kw.has(key)) cls = "kw";
+        else if (cfg.kw2.has(key)) cls = "kw2";
+        else if (cfg.ty && cfg.ty.has(w)) cls = "ty";
+        else if (/^(function|def|fn|func|sub)$/.test(prevWord)) cls = "fn";
+        else if (/^(class|struct|interface|enum|trait|impl|type|namespace|record|new|extends|implements)$/.test(prevWord)) cls = "ty";
+        else if (next === "(") cls = "fn";
+        else if (cfg.macro && next === "!" && /[(\[{]/.test(text[i + w.length + 1] || "")) cls = "fn";
+        else if (cfg.caps && /^[A-Z][A-Z0-9_]{2,}$/.test(w)) cls = "kw2";
+        else if (cfg.caps && /^[A-Z][a-z0-9]/.test(w) && prevCh !== ".") cls = "ty";
+        if (cls === "fn" && cfg.kw.has(key)) cls = "kw";
+        o.push(cls, w); i += w.length; prevCh = w[w.length - 1]; prevWord = key; continue;
+      }
+
+      // operators / brackets
+      if (cfg.name !== "Batch" && "+-*/%=<>!&|^~?:.,;".indexOf(c) >= 0) { m = sticky(reOps, i); o.push("op", m[0]); i += m[0].length; prevCh = c === "." ? "." : m[0][m[0].length - 1]; prevWord = ""; continue; }
+      o.push("", c); i++; prevCh = c; prevWord = "";
+    }
+    return o.toks;
+  }
+  function isLineStartLoose(text, p) {           // only whitespace and "- " list dashes before this on the line
+    let k = p - 1;
+    while (k >= 0 && text[k] !== "\n") { if (text[k] !== " " && text[k] !== "\t" && text[k] !== "-") return false; k--; }
+    return true;
+  }
+
+  /* ---------- CSS ---------- */
+  const AT_RULES_WITH_RULES = /^@(media|supports|keyframes|-webkit-keyframes|layer|container|document|scope|starting-style)$/i;
+  function scanCss(text) {
+    const o = out(), n = text.length;
+    const stack = [];
+    let i = 0, atRule = null, afterColon = false;
+    const sticky = (re, p) => { re.lastIndex = p; return re.exec(text); };
+    while (i < n) {
+      const c = text[i];
+      let m;
+      if (c === " " || c === "\t" || c === "\n" || c === "\r") { m = sticky(reSpace, i); o.push("", m[0]); i += m[0].length; continue; }
+      if (c === "/" && text[i + 1] === "*") { let e = text.indexOf("*/", i + 2); e = e < 0 ? n : e + 2; o.push("cm", text.slice(i, e)); i = e; continue; }
+      if (c === '"' || c === "'") {
+        let j = i + 1;
+        while (j < n && text[j] !== c && text[j] !== "\n") { if (text[j] === "\\") j++; j++; }
+        if (j < n && text[j] === c) j++;
+        j = Math.min(j, n); o.push("str", text.slice(i, j)); i = j; continue;
+      }
+      const top = stack.length ? stack[stack.length - 1] : "rules";
+      if (c === "@") { m = sticky(/@[\w-]+/y, i); if (m) { o.push("pp", m[0]); atRule = m[0]; i += m[0].length; continue; } }
+      if (c === "{") { stack.push(atRule && AT_RULES_WITH_RULES.test(atRule) ? "rules" : "decl"); atRule = null; afterColon = false; o.push("", c); i++; continue; }
+      if (c === "}") { stack.pop(); atRule = null; afterColon = false; o.push("", c); i++; continue; }
+      if (c === ";") { afterColon = false; atRule = atRule && top === "rules" && !stack.length ? null : atRule; o.push("", c); i++; continue; }
+
+      if (atRule) {                                   // the part between @media and the "{"
+        m = sticky(/[A-Za-z_-][\w-]*/y, i);
+        if (m) { o.push(/^(and|or|not|only)$/i.test(m[0]) ? "kw" : "", m[0]); i += m[0].length; continue; }
+        m = sticky(/-?(?:\d+\.?\d*|\.\d+)[a-zA-Z%]*/y, i);
+        if (m) { o.push("num", m[0]); i += m[0].length; continue; }
+        o.push("", c); i++; continue;
+      }
+
+      if (top === "decl") {
+        if (!afterColon) {
+          m = sticky(/-?-?[A-Za-z_][\w-]*/y, i);
+          if (m) { o.push("attr", m[0]); i += m[0].length; continue; }
+          if (c === ":") { afterColon = true; o.push("op", c); i++; continue; }
+          o.push("", c); i++; continue;
+        }
+        if (c === "#") { m = sticky(/#[\da-fA-F]{3,8}\b/y, i); if (m) { o.push("num", m[0]); i += m[0].length; continue; } }
+        m = sticky(/-?(?:\d+\.?\d*|\.\d+)(?:%|[a-zA-Z]+)?/y, i);
+        if (m) { o.push("num", m[0]); i += m[0].length; continue; }
+        if (c === "!") { m = sticky(/!\s*important/iy, i); if (m) { o.push("pp", m[0]); i += m[0].length; continue; } }
+        m = sticky(/-?-?[A-Za-z_][\w-]*/y, i);
+        if (m) {
+          const w = m[0]; i += w.length;
+          if (text[i] === "(") {
+            o.push("fn", w);
+            if (/^url$/i.test(w)) {
+              const q = sticky(/\(\s*(?=[^\s"')])[^)]*\)/y, i);
+              if (q) { o.push("", "("); o.push("str", q[0].slice(1, -1)); o.push("", ")"); i += q[0].length; }
+            }
+          } else o.push("val", w);
+          continue;
+        }
+        if (c === ",") { o.push("", c); i++; continue; }
+        m = reOps; o.push("op", c); i++; continue;
+      }
+
+      // selector context
+      if (c === "." || c === "#") { m = sticky(/[.#][\w-]+/y, i); if (m) { o.push(c === "." ? "ty" : "fn", m[0]); i += m[0].length; continue; } }
+      if (c === ":") { m = sticky(/::?[\w-]+/y, i); if (m) { o.push("kw2", m[0]); i += m[0].length; continue; } }
+      if (c === "[") { let e = text.indexOf("]", i); e = e < 0 ? n : e + 1; o.push("attr", text.slice(i, e)); i = e; continue; }
+      m = sticky(/-?(?:\d+\.?\d*|\.\d+)%?/y, i);
+      if (m) { o.push("num", m[0]); i += m[0].length; continue; }
+      m = sticky(/[A-Za-z_*][\w-]*|\*/y, i);
+      if (m) { o.push("tag", m[0]); i += m[0].length; continue; }
+      if (">+~,".indexOf(c) >= 0 || c === "&") { o.push("op", c); i++; continue; }
+      o.push("", c); i++;
+    }
+    return o.toks;
+  }
+
+  /* ---------- HTML / XML (with embedded <script> and <style>) ---------- */
+  function scanHtml(text, xml) {
+    const o = out(), n = text.length;
+    let i = 0;
+    const sticky = (re, p) => { re.lastIndex = p; return re.exec(text); };
+    const addAll = toks => toks.forEach(t => o.push(t[0], t[1]));
+    while (i < n) {
+      const c = text[i];
+      if (c === "<") {
+        if (text.startsWith("<!--", i)) { let e = text.indexOf("-->", i + 4); e = e < 0 ? n : e + 3; o.push("cm", text.slice(i, e)); i = e; continue; }
+        if (text.startsWith("<![CDATA[", i)) { let e = text.indexOf("]]>", i); e = e < 0 ? n : e + 3; o.push("str", text.slice(i, e)); i = e; continue; }
+        if (text[i + 1] === "!" || text[i + 1] === "?") { const close = text[i + 1] === "?" ? "?>" : ">"; let e = text.indexOf(close, i + 2); e = e < 0 ? n : e + close.length; o.push("pp", text.slice(i, e)); i = e; continue; }
+        const nm = sticky(/<\/?[A-Za-z][\w:.\-]*/y, i);
+        if (nm) {
+          o.push("tag", nm[0]); i += nm[0].length;
+          const tagName = nm[0].replace(/^<\/?/, "").toLowerCase(), closing = nm[0][1] === "/";
+          let typeAttr = "", lastAttr = "", selfClose = false;
+          while (i < n) {
+            const d = text[i];
+            if (d === ">") { o.push("tag", ">"); i++; break; }
+            if (d === "/" && text[i + 1] === ">") { o.push("tag", "/>"); i += 2; selfClose = true; break; }
+            if (d === " " || d === "\t" || d === "\n" || d === "\r") { const w = sticky(reSpace, i); o.push("", w[0]); i += w[0].length; continue; }
+            if (d === "=") { o.push("op", "="); i++; continue; }
+            if (d === '"' || d === "'") {
+              let e = text.indexOf(d, i + 1); e = e < 0 ? n : e + 1;
+              const raw = text.slice(i, e); o.push("str", raw);
+              if (lastAttr === "type") typeAttr = raw.slice(1, -1).toLowerCase();
+              i = e; continue;
+            }
+            const an = sticky(/[^\s=>\/"'<]+/y, i);
+            if (an) {
+              const isVal = text[i - 1] === "=" || /=\s*$/.test(text.slice(Math.max(0, i - 3), i));
+              o.push(isVal ? "str" : "attr", an[0]);
+              if (!isVal) lastAttr = an[0].toLowerCase(); else if (lastAttr === "type") typeAttr = an[0].toLowerCase();
+              i += an[0].length; continue;
+            }
+            if (d === "<") break;
+            o.push("", d); i++;
+          }
+          if (!xml && !closing && !selfClose && (tagName === "script" || tagName === "style")) {
+            const endRe = new RegExp("</" + tagName + "\\b", "i"); const rest = text.slice(i);
+            const em = endRe.exec(rest); const stop = em ? i + em.index : n;
+            const inner = text.slice(i, stop);
+            if (tagName === "style") addAll(scanCss(inner));
+            else if (/json/.test(typeAttr)) addAll(scanCode(inner, LANGS.json));
+            else if (typeAttr && !/javascript|ecmascript|module|babel|jsx/.test(typeAttr)) o.push("", inner);
+            else addAll(scanCode(inner, LANGS.js));
+            i = stop;
+          }
+          continue;
+        }
+        o.push("", "<"); i++; continue;
+      }
+      if (c === "&") { const en = sticky(/&(?:#\d+|#[xX][\da-fA-F]+|[A-Za-z][\w]*);/y, i); if (en) { o.push("esc", en[0]); i += en[0].length; continue; } o.push("", "&"); i++; continue; }
+      let e = i + 1;
+      while (e < n && text[e] !== "<" && text[e] !== "&") e++;
+      o.push("", text.slice(i, e)); i = e;
+    }
+    return o.toks;
+  }
+
+  /* ---------- Markdown ---------- */
+  function scanMd(text) {
+    const o = out();
+    const lines = text.split("\n");
+    let fence = null;
+    const inlineRe = /`[^`\n]+`|\*\*[^*\n]+\*\*|__[^_\n]+__|!?\[[^\]\n]*\]\([^)\n]*\)|<[A-Za-z\/][^>\n]*>|(?<![*\w])\*[^*\s][^*\n]*\*(?![*\w])|(?<![_\w])_[^_\s][^_\n]*_(?![_\w])/g;
+    for (let li = 0; li < lines.length; li++) {
+      const line = lines[li], nl = li < lines.length - 1 ? "\n" : "";
+      let fm;
+      if (fence) {
+        if (/^\s*(```|~~~)/.test(line)) { o.push("pp", line); fence = null; }
+        else if (fence.lang) { scanFor(fence.lang, line).forEach(t => o.push(t[0], t[1])); }
+        else o.push("str", line);
+        o.push("", nl); continue;
+      }
+      if ((fm = /^(\s*)(```|~~~)\s*([\w#+.-]*)/.exec(line))) { fence = { lang: LANGS[resolve(fm[3])] && resolve(fm[3]) !== "text" ? resolve(fm[3]) : null }; o.push("pp", line); o.push("", nl); continue; }
+      if (/^#{1,6}(\s|$)/.test(line)) { o.push("hd", line); o.push("", nl); continue; }
+      if (/^\s*>/.test(line)) { o.push("cm", line); o.push("", nl); continue; }
+      if (/^\s*([-*_])(\s*\1){2,}\s*$/.test(line)) { o.push("op", line); o.push("", nl); continue; }
+      let rest = line, lead = /^(\s*)([-*+]|\d+[.)])(\s+)/.exec(line);
+      if (lead) { o.push("", lead[1]); o.push("op", lead[2]); o.push("", lead[3]); rest = line.slice(lead[0].length); }
+      let last = 0, mm; inlineRe.lastIndex = 0;
+      while ((mm = inlineRe.exec(rest))) {
+        o.push("", rest.slice(last, mm.index));
+        const t = mm[0];
+        o.push(t[0] === "`" ? "str" : (t.startsWith("**") || t.startsWith("__")) ? "bold" : t[0] === "<" ? "tag" : (t[0] === "[" || t[0] === "!") ? "fn" : "ital", t);
+        last = mm.index + t.length;
+        if (t.length === 0) inlineRe.lastIndex++;
+      }
+      o.push("", rest.slice(last)); o.push("", nl);
+    }
+    return o.toks;
+  }
+
+  function scanFor(key, text) {
+    const L = LANGS[key];
+    if (!L || L.plain) return [["", text]];
+    if (L.special === "css") return scanCss(text);
+    if (L.special === "html") return scanHtml(text, false);
+    if (L.special === "xml") return scanHtml(text, true);
+    if (L.special === "md") return scanMd(text);
+    return scanCode(text, L);
+  }
+
+  function tokenize(text, key) {
+    key = resolve(key);
+    try { return scanFor(key, text); } catch (e) { return [["", text]]; }
+  }
+
+  /* comment syntax for "toggle comment" */
+  function commentFor(key) {
+    key = resolve(key);
+    const L = LANGS[key];
+    if (key === "html" || key === "xml" || key === "md") return { open: "<!--", close: "-->" };
+    if (key === "css") return { open: "/*", close: "*/" };
+    if (key === "bat") return { line: "REM" };
+    if (L && L.lc && L.lc.length) return { line: L.lc[0].trim() };
+    return null;
+  }
+
+  return { tokenize, langForName, resolve, commentFor, LANGS, ORDER, label: k => (LANGS[resolve(k)] || LANGS.text).name, pairsOn: k => !!(LANGS[resolve(k)] || {}).pairs };
+})();
+
 function TextEditorApp(body, ctx) {
   const S = FileStore;
+  const H = CodeHighlighter;
   const MAX_BYTES = 10 * 1024 * 1024;
-  const prefs = Object.assign({ size: 14, wrap: false }, ctx.storage.get('prefs', {}));
+  const BIG_CHARS = 400000;      // above this size highlighting is switched off so typing stays fast
+  const SMALL_CHARS = 150000;    // bracket matching only below this size
+  const MAX_MATCHES = 10000;
+  const VOID = new Set("area base br col embed hr img input link meta param source track wbr".split(" "));
+  const OPEN = { "(": ")", "[": "]", "{": "}", '"': '"', "'": "'", "`": "`" };
+  const CLOSERS = new Set([")", "]", "}", '"', "'", "`"]);
+  const prefs = Object.assign({ size: 14, wrap: false, indent: 'tab' }, ctx.storage.get('prefs', {}));
+  if (!/^(tab|sp[248])$/.test(prefs.indent)) prefs.indent = 'tab';
   let cur = { id: null, name: 'Untitled.txt', parent: 'documents' };
-  let dirty = false, closing = false, statsTimer = null, disposed = false;
+  let dirty = false, closing = false, disposed = false;
+  let lang = 'text', langAuto = true;
+  let tokCache = null, starts = null, plainMode = false, lineCount = 1, curLine = 1, lastNums = -1;
+  let brPair = null, curMatch = null, lastSig = '', clEl = null;
+  let findOpen = false, replMsg = '', findRanges = [], findTimer = null, statsTimer = null, selRaf = 0, renderRaf = 0, countText = null, countHtml = '';
+  const fo = { c: false, w: false, r: false };
 
   body.innerHTML = `
     <div class="te-root">
@@ -7962,40 +8713,504 @@ function TextEditorApp(body, ctx) {
         <button type="button" class="fm-ibtn" data-a="saveas" title="Save a copy under a new name (Ctrl+Shift+S)">Save as…</button>
         <button type="button" class="fm-ibtn" data-a="dl" title="Download to your computer">⬇ Download</button>
         <span class="fm-sepv"></span>
-        <button type="button" class="fm-ibtn" data-a="smaller" title="Smaller text">A−</button>
-        <button type="button" class="fm-ibtn" data-a="bigger" title="Bigger text">A+</button>
+        <button type="button" class="fm-ibtn" data-a="undo" title="Undo (Ctrl+Z)">↶</button>
+        <button type="button" class="fm-ibtn" data-a="redo" title="Redo (Ctrl+Y)">↷</button>
+        <button type="button" class="fm-ibtn" data-a="find" title="Find and replace (Ctrl+F / Ctrl+H)">🔍 Find</button>
+        <button type="button" class="fm-ibtn" data-a="goto" title="Go to line (Ctrl+G)">Go to…</button>
+        <span class="fm-sepv"></span>
+        <button type="button" class="fm-ibtn" data-a="smaller" title="Smaller text (Ctrl + mouse wheel)">A−</button>
+        <button type="button" class="fm-ibtn" data-a="bigger" title="Bigger text (Ctrl + mouse wheel)">A+</button>
         <button type="button" class="fm-ibtn" data-a="wrap" title="Wrap long lines">↩ Wrap</button>
+        <button type="button" class="fm-ibtn" data-a="keys" title="Keyboard shortcuts">⌨</button>
         <span class="te-name"></span>
       </div>
-      <textarea class="te-area" spellcheck="false" placeholder="Start typing…"></textarea>
-      <div class="te-status"><span class="te-pos"></span><span class="te-count"></span><span class="te-state"></span></div>
+      <div class="te-find" hidden>
+        <input type="text" class="settings-input te-fi" placeholder="Find" spellcheck="false" />
+        <button type="button" class="fm-ibtn" data-a="fcase" title="Match case">Aa</button>
+        <button type="button" class="fm-ibtn" data-a="fword" title="Whole word">Ab|</button>
+        <button type="button" class="fm-ibtn" data-a="fregex" title="Regular expression">.*</button>
+        <button type="button" class="fm-ibtn" data-a="fprev" title="Previous match (Shift+F3)">↑</button>
+        <button type="button" class="fm-ibtn" data-a="fnext" title="Next match (F3 / Enter)">↓</button>
+        <span class="te-fcount"></span>
+        <input type="text" class="settings-input te-ri" placeholder="Replace with" spellcheck="false" />
+        <button type="button" class="fm-ibtn" data-a="frep" title="Replace this match">Replace</button>
+        <button type="button" class="fm-ibtn" data-a="fall" title="Replace every match">Replace all</button>
+        <button type="button" class="fm-ibtn" data-a="fclose" title="Close (Esc)">✕</button>
+      </div>
+      <div class="te-wrap">
+        <div class="te-hl" aria-hidden="true"><div class="te-code"></div></div>
+        <textarea class="te-area" spellcheck="false" autocapitalize="off" autocomplete="off" placeholder="Start typing…"></textarea>
+        <div class="te-gutter"><div class="te-nums"></div></div>
+        <span class="te-meas" aria-hidden="true">MMMMMMMMMM</span>
+      </div>
+      <div class="te-status"><span class="te-pos"></span><span class="te-count"></span><span class="te-state"></span>
+        <select class="te-lang" title="Language (colours and comment style)"></select>
+        <select class="te-indent" title="Tab key behaviour">
+          <option value="tab">Tabs</option><option value="sp2">Spaces: 2</option><option value="sp4">Spaces: 4</option><option value="sp8">Spaces: 8</option>
+        </select>
+      </div>
     </div>`;
   const q = s => body.querySelector(s);
-  const ta = q('.te-area');
+  const rootEl = q('.te-root'), wrapEl = q('.te-wrap'), ta = q('.te-area'), hl = q('.te-hl'), code = q('.te-code');
+  const gut = q('.te-gutter'), nums = q('.te-nums'), meas = q('.te-meas');
+  const findBar = q('.te-find'), fInput = q('.te-fi'), rInput = q('.te-ri'), fCount = q('.te-fcount');
+  const langSel = q('.te-lang'), indentSel = q('.te-indent');
   const fail = e => AppDialog.alert(body, { title: "Couldn't do that", message: fsErrorText(e) });
+  H.ORDER.forEach(k => { const o = document.createElement('option'); o.value = k; o.textContent = H.label(k); langSel.appendChild(o); });
+  indentSel.value = prefs.indent;
 
+  /* ---------- small helpers ---------- */
+  const esc = s => s.replace(/[&<>]/g, c => c === '&' ? '&amp;' : c === '<' ? '&lt;' : '&gt;');
+  const lineStart = (v, p) => p <= 0 ? 0 : v.lastIndexOf('\n', p - 1) + 1;
+  const countLines = v => { let n = 1, i = -1; while ((i = v.indexOf('\n', i + 1)) !== -1) n++; return n; };
+  const unitWidth = () => prefs.indent === 'tab' ? 4 : parseInt(prefs.indent.slice(2), 10);
+  const indentUnit = () => prefs.indent === 'tab' ? '\t' : ' '.repeat(unitWidth());
+  const isHtmlLike = () => lang === 'html' || lang === 'xml';
+
+  /* ---------- layout / scrolling ---------- */
+  function syncScroll() {
+    hl.scrollTop = ta.scrollTop; hl.scrollLeft = ta.scrollLeft;
+    nums.style.transform = 'translateY(' + (-ta.scrollTop) + 'px)';
+  }
+  function syncLayout() {
+    const sbw = ta.offsetWidth - ta.clientWidth, sbh = ta.offsetHeight - ta.clientHeight;
+    hl.style.right = sbw + 'px'; hl.style.bottom = sbh + 'px'; gut.style.bottom = sbh + 'px';
+    syncScroll();
+  }
   function applyPrefs() {
-    ta.style.fontSize = prefs.size + 'px';
+    rootEl.style.setProperty('--te-fs', prefs.size + 'px');
+    rootEl.style.setProperty('--te-lh', Math.round(prefs.size * 1.5) + 'px');
+    rootEl.style.setProperty('--te-tab', String(unitWidth()));
     ta.classList.toggle('wrap', !!prefs.wrap);
+    code.classList.toggle('wrap', !!prefs.wrap);
+    q('[data-a="wrap"]').classList.toggle('on', !!prefs.wrap);
     ctx.storage.set('prefs', prefs);
+    lastNums = -1;
+    buildNums(); syncLayout();
+  }
+
+  /* ---------- tokens -> HTML ---------- */
+  function tokens(text) {
+    if (!tokCache || tokCache.text !== text || tokCache.lang !== lang) {
+      tokCache = { text, lang, toks: H.tokenize(text, lang) };
+      starts = null;
+    }
+    return tokCache.toks;
+  }
+  function clsAt(p) {
+    const toks = tokCache.toks;
+    if (!starts) { starts = new Array(toks.length); let o = 0; for (let i = 0; i < toks.length; i++) { starts[i] = o; o += toks[i][1].length; } }
+    let lo = 0, hi = starts.length - 1;
+    while (lo < hi) { const mid = (lo + hi + 1) >> 1; if (starts[mid] <= p) lo = mid; else hi = mid - 1; }
+    return toks.length ? toks[lo][0] : '';
+  }
+  function buildHtml(toks, marks) {
+    const ev = [];
+    marks.forEach(m => { ev.push([m[0], m[2], 1]); ev.push([m[1], m[2], -1]); });
+    ev.sort((a, b) => a[0] - b[0] || a[2] - b[2]);
+    const active = {};
+    let ei = 0, pos = 0, out = '<div>';
+    const span = (base, s) => {
+      if (!s) return;
+      let c = base ? 't-' + base : '';
+      for (const k in active) if (active[k] > 0) c += (c ? ' ' : '') + k;
+      out += c ? '<span class="' + c + '">' + esc(s) + '</span>' : esc(s);
+    };
+    for (let t = 0; t < toks.length; t++) {
+      const cls = toks[t][0], str = toks[t][1], L = str.length;
+      let a = 0;
+      while (a < L) {
+        while (ei < ev.length && ev[ei][0] <= pos) { active[ev[ei][1]] = (active[ev[ei][1]] || 0) + ev[ei][2]; ei++; }
+        const nextEv = ei < ev.length ? ev[ei][0] : Infinity;
+        const b = Math.min(L, a + (nextEv - pos));
+        const nl = str.indexOf('\n', a);
+        if (nl !== -1 && nl < b) { span(cls, str.slice(a, nl)); out += '</div><div>'; pos += nl - a + 1; a = nl + 1; continue; }
+        span(cls, str.slice(a, b)); pos += b - a; a = b;
+      }
+    }
+    return out + '</div>';
+  }
+
+  /* ---------- bracket matching + current search match ---------- */
+  function findBracket() {
+    const v = ta.value, p = ta.selectionStart;
+    for (const k of [p - 1, p]) {
+      const ch = v[k];
+      const oi = '([{'.indexOf(ch), ci = ')]}'.indexOf(ch);
+      if (oi < 0 && ci < 0) continue;
+      tokens(v);
+      if ({ str: 1, cm: 1, rx: 1 }[clsAt(k)]) continue;
+      const open = oi >= 0 ? ch : '([{'[ci], close = oi >= 0 ? ')]}'[oi] : ch;
+      let depth = 1;
+      if (oi >= 0) {
+        for (let i = k + 1, lim = Math.min(v.length, k + 20000); i < lim; i++) {
+          const c = v[i];
+          if (c !== open && c !== close) continue;
+          if ({ str: 1, cm: 1, rx: 1 }[clsAt(i)]) continue;
+          if (c === open) depth++; else if (--depth === 0) return [k, i];
+        }
+      } else {
+        for (let i = k - 1, lim = Math.max(0, k - 20000); i >= lim; i--) {
+          const c = v[i];
+          if (c !== open && c !== close) continue;
+          if ({ str: 1, cm: 1, rx: 1 }[clsAt(i)]) continue;
+          if (c === close) depth++; else if (--depth === 0) return [i, k];
+        }
+      }
+    }
+    return null;
+  }
+  function markState() {
+    brPair = null; curMatch = null;
+    if (!plainMode && ta.value.length <= SMALL_CHARS && ta.selectionStart === ta.selectionEnd && document.activeElement === ta) brPair = findBracket();
+    if (findOpen && findRanges.length) {
+      const s = ta.selectionStart, e = ta.selectionEnd;
+      let lo = 0, hi = findRanges.length - 1;
+      while (lo < hi) { const mid = (lo + hi) >> 1; if (findRanges[mid][0] < s) lo = mid + 1; else hi = mid; }
+      if (findRanges[lo][0] === s && findRanges[lo][1] === e) curMatch = findRanges[lo];
+    }
+    return (brPair ? brPair.join(',') : '-') + '|' + (curMatch ? curMatch.join(',') : '-');
+  }
+
+  /* ---------- render ---------- */
+  function render() {
+    const text = ta.value;
+    plainMode = text.length > BIG_CHARS;
+    wrapEl.classList.toggle('plain', plainMode);
+    clEl = null;
+    if (plainMode) { code.textContent = ''; lastSig = ''; stateText(); syncLayout(); return; }
+    const toks = tokens(text);
+    lastSig = markState();
+    const marks = [];
+    if (findOpen && findRanges.length <= MAX_MATCHES) findRanges.forEach(r => marks.push([r[0], r[1], 'm-find']));
+    if (curMatch) marks.push([curMatch[0], curMatch[1], 'm-cur']);
+    if (brPair) { marks.push([brPair[0], brPair[0] + 1, 'm-br']); marks.push([brPair[1], brPair[1] + 1, 'm-br']); }
+    code.innerHTML = buildHtml(toks, marks);
+    lineCount = code.children.length;
+    sizeCode(text);
+    wrapEl.style.setProperty('--te-digits', String(Math.max(3, String(lineCount).length)));
+    buildNums();
+    markCurrentLine();
+    stateText();
+    syncLayout();
+  }
+  // Long files: let the browser skip layout of off-screen lines (all lines are one fixed height when not wrapping),
+  // and give the layer the full scroll width by hand so it still scrolls exactly like the text box.
+  function sizeCode(text) {
+    const cv = !prefs.wrap && lineCount > 200;
+    code.classList.toggle('cv', cv);
+    if (!cv) { code.style.minWidth = ''; return; }
+    const tw = unitWidth();
+    let max = 0, p = 0;
+    for (;;) {
+      let e = text.indexOf('\n', p); if (e < 0) e = text.length;
+      let w = e - p;
+      if (w * tw > max) {                      // only lines that could beat the current longest need exact tab counting
+        w += (text.slice(p, e).split('\t').length - 1) * (tw - 1);
+        if (w > max) max = w;
+      }
+      if (e >= text.length) break;
+      p = e + 1;
+    }
+    const cw = meas.getBoundingClientRect().width / 10;
+    code.style.minWidth = Math.ceil(gut.offsetWidth + 10 + max * cw + 14 + 4) + 'px';
+  }
+  function renderSoon() {
+    if (ta.value.length < 25000) { render(); return; }
+    if (!renderRaf) renderRaf = requestAnimationFrame(() => { renderRaf = 0; if (!disposed) render(); });
+  }
+  function buildNums(force) {
+    if (plainMode) return;
+    const n = lineCount;
+    if (!prefs.wrap) {
+      if (n === lastNums && !force) return;
+      lastNums = n;
+      const a = new Array(n); for (let i = 0; i < n; i++) a[i] = i + 1;
+      nums.textContent = a.join('\n');
+      return;
+    }
+    lastNums = -1;
+    const lh = Math.round(prefs.size * 1.5), kids = code.children, a = [];
+    if (n > 30000) { for (let i = 1; i <= n; i++) a.push(i); }
+    else for (let i = 0; i < n; i++) {
+      a.push(String(i + 1));
+      const rows = Math.max(1, Math.round(kids[i].offsetHeight / lh));
+      for (let r = 1; r < rows; r++) a.push('');
+    }
+    nums.textContent = a.join('\n');
+  }
+  function markCurrentLine() {
+    if (plainMode) return;
+    const el = code.children[curLine - 1];
+    if (clEl && clEl !== el) clEl.classList.remove('cl');
+    if (el) el.classList.add('cl');
+    clEl = el || null;
+  }
+
+  /* ---------- title / status ---------- */
+  function detectLang() {
+    if (!langAuto) return false;
+    const k = H.langForName(cur.name);
+    if (k === lang) return false;
+    lang = k; langSel.value = k; tokCache = null;
+    return true;
+  }
+  function stateText() {
+    q('.te-state').textContent = plainMode ? 'Large file: colours off' : (dirty ? 'Unsaved changes' : (cur.id ? 'Saved' : 'Not saved yet'));
   }
   function updateTitle() {
     q('.te-name').textContent = (dirty ? '● ' : '') + cur.name;
-    q('.te-state').textContent = dirty ? 'Unsaved changes' : (cur.id ? 'Saved' : 'Not saved yet');
+    stateText();
     ctx.setTitle((dirty ? '● ' : '') + cur.name + ' — Text Editor');
+    if (detectLang()) render();
   }
   function setDirty(v) { dirty = v; updateTitle(); }
   function updateStats() {
-    const v = ta.value, pos = ta.selectionStart;
-    const before = v.slice(0, pos), nl = before.lastIndexOf('\n');
-    let line = 1, i = -1;
-    while ((i = before.indexOf('\n', i + 1)) !== -1) line++;
-    q('.te-pos').textContent = 'Ln ' + line + ', Col ' + (pos - nl);
-    const t = v.trim();
-    q('.te-count').textContent = v.length.toLocaleString() + ' characters · ' + (t ? t.split(/\s+/).length : 0).toLocaleString() + ' words';
+    const v = ta.value, pos = ta.selectionStart, end = ta.selectionEnd;
+    let line = 1, last = -1, i = -1;
+    while ((i = v.indexOf('\n', i + 1)) !== -1 && i < pos) { line++; last = i; }
+    curLine = line;
+    q('.te-pos').textContent = 'Ln ' + line + ', Col ' + (pos - last) + (end > pos ? ' · ' + (end - pos).toLocaleString() + ' selected' : '');
+    if (countText !== v) {
+      countText = v;
+      const t = v.trim();
+      countHtml = v.length.toLocaleString() + ' characters · ' + (t ? t.split(/\s+/).length : 0).toLocaleString() + ' words · ' + countLines(v).toLocaleString() + ' lines';
+      q('.te-count').textContent = countHtml;
+    }
   }
   const statsSoon = () => { clearTimeout(statsTimer); statsTimer = setTimeout(updateStats, 120); };
+  function onSel() {
+    selRaf = 0;
+    if (disposed) return;
+    updateStats();
+    markCurrentLine();
+    if (plainMode) return;
+    if (markState() !== lastSig) render();
+  }
+  const selSoon = () => { if (!selRaf) selRaf = requestAnimationFrame(onSel); };
 
+  /* ---------- scrolling the caret into view ---------- */
+  function revealSelection() {
+    if (plainMode) return;
+    const v = ta.value, p = ta.selectionEnd;
+    let idx = 0, i = -1;
+    while ((i = v.indexOf('\n', i + 1)) !== -1 && i < p) idx++;
+    const el = code.children[idx];
+    if (!el) return;
+    const top = el.offsetTop, h = el.offsetHeight, view = ta.clientHeight;
+    if (top < ta.scrollTop + 8) ta.scrollTop = Math.max(0, top - view / 3);
+    else if (top + h > ta.scrollTop + view - 8) ta.scrollTop = top + h - (view * 2) / 3;
+    if (!prefs.wrap) {
+      const ls = lineStart(v, p), tw = unitWidth();
+      let cols = 0;
+      for (let k = ls; k < p; k++) cols += v[k] === '\t' ? tw - (cols % tw) : 1;
+      const cw = meas.getBoundingClientRect().width / 10, gw = gut.offsetWidth;
+      const x = gw + 10 + cols * cw;
+      if (x - ta.scrollLeft < gw + 6) ta.scrollLeft = Math.max(0, x - gw - 60);
+      else if (x - ta.scrollLeft > ta.clientWidth - 24) ta.scrollLeft = x - ta.clientWidth + 90;
+    }
+    syncScroll();
+  }
+
+  /* ---------- editing primitives (keep the browser's undo history working) ---------- */
+  function edit(start, end, text, selS, selE) {
+    if (start === end && text === '') { if (selS != null) ta.setSelectionRange(selS, selE == null ? selS : selE); return; }
+    if (document.activeElement !== ta) ta.focus();
+    ta.setSelectionRange(start, end);
+    let done = false;
+    try { done = text === '' ? document.execCommand('delete') : document.execCommand('insertText', false, text); } catch (_) {}
+    if (!done) { ta.setRangeText(text, start, end, 'end'); ta.dispatchEvent(new Event('input', { bubbles: true })); }
+    if (selS != null) ta.setSelectionRange(selS, selE == null ? selS : selE);
+    revealSelection();
+    selSoon();
+  }
+  function blockInfo() {
+    const v = ta.value, s = ta.selectionStart, en = ta.selectionEnd, ls = lineStart(v, s);
+    let endPos = en;
+    if (en > s && v[en - 1] === '\n') endPos = en - 1;
+    let le = v.indexOf('\n', endPos); if (le < 0) le = v.length;
+    return { v, s, en, ls, le };
+  }
+  function indentBlock() {
+    const b = blockInfo(), u = indentUnit();
+    const out = b.v.slice(b.ls, b.le).split('\n').map(l => l.trim() === '' ? l : u + l).join('\n');
+    edit(b.ls, b.le, out, b.ls, b.ls + out.length);
+  }
+  function outdentBlock() {
+    const b = blockInfo(), w = unitWidth(), re = new RegExp('^(\\t| {1,' + w + '})');
+    const lines = b.v.slice(b.ls, b.le).split('\n');
+    const firstRemoved = (re.exec(lines[0]) || [''])[0].length;
+    const out = lines.map(l => l.replace(re, '')).join('\n');
+    if (out === b.v.slice(b.ls, b.le)) return;
+    if (b.s === b.en) { const c = Math.max(b.ls, b.s - firstRemoved); edit(b.ls, b.le, out, c); }
+    else edit(b.ls, b.le, out, b.ls, b.ls + out.length);
+  }
+  function toggleComment() {
+    const c = H.commentFor(lang);
+    if (!c) return;
+    const b = blockInfo(), lines = b.v.slice(b.ls, b.le).split('\n');
+    const real = lines.filter(l => l.trim() !== '');
+    if (!real.length) return;
+    let out;
+    if (c.line) {
+      const all = real.every(l => l.trimStart().startsWith(c.line));
+      if (all) out = lines.map(l => l.replace(new RegExp('^(\\s*)' + c.line.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ' ?'), '$1'));
+      else {
+        const min = Math.min.apply(null, real.map(l => /^[ \t]*/.exec(l)[0].length));
+        out = lines.map(l => l.trim() === '' ? l : l.slice(0, min) + c.line + ' ' + l.slice(min));
+      }
+    } else {
+      const all = real.every(l => l.trim().startsWith(c.open) && l.trim().endsWith(c.close));
+      if (all) out = lines.map(l => l.trim() === '' ? l : l.replace(c.open, '').replace(/ ?$/, '').replace(new RegExp(c.close.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\s*$'), '').replace(/^( *) /, '$1').replace(/\s+$/, ''));
+      else out = lines.map(l => { if (l.trim() === '') return l; const ind = /^[ \t]*/.exec(l)[0]; return ind + c.open + ' ' + l.slice(ind.length).trimEnd() + ' ' + c.close; });
+    }
+    const text = out.join('\n');
+    edit(b.ls, b.le, text, b.ls, b.ls + text.length);
+  }
+  function duplicateLines() {
+    const b = blockInfo(), blk = b.v.slice(b.ls, b.le);
+    edit(b.le, b.le, '\n' + blk, b.s + blk.length + 1, b.en + blk.length + 1);
+  }
+  function deleteLines() {
+    const b = blockInfo();
+    if (b.le < b.v.length) edit(b.ls, b.le + 1, '', b.ls);
+    else if (b.ls > 0) edit(b.ls - 1, b.le, '', b.ls - 1);
+    else edit(b.ls, b.le, '', 0);
+  }
+  function moveLines(dir) {
+    const b = blockInfo(), blk = b.v.slice(b.ls, b.le);
+    if (dir < 0) {
+      if (b.ls === 0) return;
+      const ps = lineStart(b.v, b.ls - 1), prev = b.v.slice(ps, b.ls - 1);
+      edit(ps, b.le, blk + '\n' + prev, b.s - prev.length - 1, b.en - prev.length - 1);
+    } else {
+      if (b.le >= b.v.length) return;
+      let ne = b.v.indexOf('\n', b.le + 1); if (ne < 0) ne = b.v.length;
+      const next = b.v.slice(b.le + 1, ne);
+      edit(b.ls, ne, next + '\n' + blk, b.s + next.length + 1, b.en + next.length + 1);
+    }
+  }
+  function newLine(above) {
+    const b = blockInfo(), ind = /^[ \t]*/.exec(b.v.slice(b.ls, b.le))[0];
+    if (above) edit(b.ls, b.ls, ind + '\n', b.ls + ind.length);
+    else edit(b.le, b.le, '\n' + ind, b.le + 1 + ind.length);
+  }
+  function changeCase(upper) {
+    const v = ta.value, s = ta.selectionStart, en = ta.selectionEnd;
+    if (s === en) return;
+    const t = v.slice(s, en);
+    edit(s, en, upper ? t.toUpperCase() : t.toLowerCase(), s, en);
+  }
+  function handleEnter() {
+    const v = ta.value, s = ta.selectionStart, en = ta.selectionEnd, u = indentUnit();
+    const ls = lineStart(v, s), before = v.slice(ls, s);
+    const ind = /^[ \t]*/.exec(before)[0], trimmed = before.replace(/\s+$/, '');
+    if (lang === 'md') {
+      const li = /^(\s*)([-*+]|\d+)([.)]?)(\s+)(.*)$/.exec(before);
+      if (li && (li[2].length === 1 && '-*+'.indexOf(li[2]) >= 0 ? true : li[3])) {
+        if (li[5].trim() === '' && s === en) { edit(ls, s, '', ls); return; }
+        const mark = /\d/.test(li[2]) ? (parseInt(li[2], 10) + 1) + li[3] : li[2];
+        edit(s, en, '\n' + li[1] + mark + li[4]); return;
+      }
+    }
+    const L = H.LANGS[lang] || {};
+    let inc = /[{(\[]$/.test(trimmed) || (!!L.indentColon && trimmed.slice(-1) === ':'), tag = null;
+    if (isHtmlLike()) {
+      const m = /<([A-Za-z][\w:.-]*)(?:\s[^<>]*)?>$/.exec(trimmed);
+      if (m && !/\/>$/.test(trimmed) && !(lang === 'html' && VOID.has(m[1].toLowerCase()))) { inc = true; tag = m[1]; }
+    }
+    const pc = { '{': '}', '(': ')', '[': ']' }[trimmed.slice(-1)];
+    const between = inc && ((pc && v[en] === pc) || (tag && v.slice(en).startsWith('</' + tag)));
+    if (between) edit(s, en, '\n' + ind + u + '\n' + ind, s + 1 + ind.length + u.length);
+    else edit(s, en, '\n' + ind + (inc ? u : ''));
+  }
+
+  /* ---------- find / replace ---------- */
+  function findRegex(global) {
+    const term = fInput.value;
+    if (!term) return null;
+    let src = fo.r ? term : term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    if (fo.w) src = '\\b(?:' + src + ')\\b';
+    try { return new RegExp(src, (global ? 'g' : '') + (fo.c ? '' : 'i') + 'm'); } catch (_) { return undefined; }
+  }
+  function updateFindLabel(extra) {
+    const re = fInput.value ? findRegex(true) : null;
+    let t = '';
+    if (extra) { replMsg = extra; t = extra; }
+    else if (replMsg) t = replMsg;
+    else if (re === undefined) t = 'Invalid regex';
+    else if (fInput.value) {
+      if (!findRanges.length) t = 'No results';
+      else {
+        const s = ta.selectionStart, e = ta.selectionEnd, i = findRanges.findIndex(r => r[0] === s && r[1] === e);
+        t = (i >= 0 ? (i + 1) + ' of ' : '') + findRanges.length + (findRanges.length >= MAX_MATCHES ? '+' : '') + (i >= 0 ? '' : ' found');
+      }
+    }
+    fCount.textContent = t;
+  }
+  function updateFind() {
+    findRanges = [];
+    if (findOpen) {
+      const re = findRegex(true);
+      if (re) {
+        const v = ta.value; let m;
+        while (findRanges.length < MAX_MATCHES && (m = re.exec(v))) {
+          if (m[0].length === 0) { re.lastIndex++; continue; }
+          findRanges.push([m.index, m.index + m[0].length]);
+        }
+      }
+    }
+    render();
+    updateFindLabel();
+  }
+  const findSoon = () => { clearTimeout(findTimer); findTimer = setTimeout(() => { if (!disposed && findOpen) updateFind(); }, 150); };
+  function openFind(focusReplace) {
+    findOpen = true; findBar.hidden = false;
+    const s = ta.selectionStart, e = ta.selectionEnd;
+    if (e > s && e - s < 200 && ta.value.slice(s, e).indexOf('\n') < 0) fInput.value = ta.value.slice(s, e);
+    (focusReplace && fInput.value ? rInput : fInput).focus();
+    (focusReplace && fInput.value ? rInput : fInput).select();
+    updateFind();
+  }
+  function closeFind() {
+    findOpen = false; findBar.hidden = true; findRanges = [];
+    render(); ta.focus();
+  }
+  function findStep(dir) {
+    replMsg = '';
+    if (!fInput.value) { openFind(false); return; }
+    if (!findRanges.length) updateFind();
+    if (!findRanges.length) return;
+    const s = ta.selectionStart, en = ta.selectionEnd;
+    const r = dir > 0 ? (findRanges.find(x => x[0] >= en) || findRanges[0])
+                      : ([...findRanges].reverse().find(x => x[1] <= s) || findRanges[findRanges.length - 1]);
+    ta.setSelectionRange(r[0], r[1]);
+    revealSelection();
+    render(); updateStats(); updateFindLabel();
+  }
+  function replaceCurrent() {
+    const re = findRegex(false);
+    if (!re) return;
+    const v = ta.value, s = ta.selectionStart, en = ta.selectionEnd, sel = v.slice(s, en), m = re.exec(sel);
+    if (!(m && m.index === 0 && m[0].length === sel.length && sel.length > 0)) { findStep(1); return; }
+    const rep = fo.r ? sel.replace(re, rInput.value) : rInput.value;
+    edit(s, en, rep, s + rep.length);
+    updateFind(); findStep(1);
+  }
+  function replaceAll() {
+    const re = findRegex(true);
+    if (!re) return;
+    const v = ta.value;
+    let n = 0;
+    const nv = v.replace(re, (...a) => { n++; return fo.r ? a[0].replace(findRegex(false), rInput.value) : rInput.value; });
+    if (nv === v) { updateFindLabel('No results'); return; }
+    const st = ta.scrollTop;
+    edit(0, v.length, nv, 0);
+    ta.scrollTop = st; syncScroll();
+    updateFind(); updateFindLabel(n + ' replaced');
+  }
+
+  /* ---------- files ---------- */
   async function ensureSaved() {
     if (!dirty) return true;
     const r = await AppDialog.choice(body, { title: 'Unsaved changes', message: 'Save changes to “' + cur.name + '”?',
@@ -8019,6 +9234,16 @@ function TextEditorApp(body, ctx) {
       return true;
     } catch (e) { fail(e); return false; }
   }
+  function loadText(text) {
+    ta.value = text; tokCache = null; countText = null;
+    langAuto = true; detectLang();
+    ta.scrollTop = 0; ta.scrollLeft = 0;
+    try { ta.setSelectionRange(0, 0); } catch (_) {}
+    if (findOpen) { findRanges = []; }
+    render(); updateStats();
+    if (findOpen) updateFind();
+    ta.focus();
+  }
   async function openFile(id) {
     try {
       if (!(await ensureSaved())) return;
@@ -8028,22 +9253,16 @@ function TextEditorApp(body, ctx) {
       const d = await S.readData(id);
       const text = typeof d === 'string' ? d : (d && d.text ? await d.text() : '');
       if (!S.isText(n) && text.indexOf('\u0000') >= 0) { fail(new Error('“' + n.name + '” doesn’t look like a text file, so it can’t be edited here.')); return; }
-      ta.value = text;
       cur = { id: n.id, name: n.name, parent: n.parent };
+      loadText(text);
       setDirty(false);
-      ta.scrollTop = 0; ta.scrollLeft = 0;
-      try { ta.setSelectionRange(0, 0); } catch (_) {}
-      updateStats();
-      ta.focus();
     } catch (e) { fail(e); }
   }
   async function newDoc() {
     if (!(await ensureSaved())) return;
-    ta.value = '';
     cur = { id: null, name: 'Untitled.txt', parent: cur.parent || 'documents' };
+    loadText('');
     setDirty(false);
-    updateStats();
-    ta.focus();
   }
   async function pickAndOpen() {
     const pick = await FilePicker.pick(body, { mode: 'open', title: 'Open a file', startFolder: cur.parent || 'documents' });
@@ -8056,7 +9275,31 @@ function TextEditorApp(body, ctx) {
     document.body.appendChild(a); a.click(); a.remove();
     setTimeout(() => URL.revokeObjectURL(url), 4000);
   }
+  async function gotoLine() {
+    const total = countLines(ta.value);
+    const r = await AppDialog.prompt(body, { title: 'Go to line', message: 'Line number (1 – ' + total.toLocaleString() + '):', value: String(curLine), okLabel: 'Go' });
+    ta.focus();
+    if (r == null) return;
+    const n = parseInt(r, 10);
+    if (!(n >= 1)) return;
+    const v = ta.value; let pos = 0;
+    for (let l = 1; l < Math.min(n, total); l++) pos = v.indexOf('\n', pos) + 1;
+    ta.setSelectionRange(pos, pos);
+    revealSelection(); selSoon();
+  }
+  function showKeys() {
+    const rows = [
+      ['Ctrl+S / Ctrl+Shift+S', 'Save / Save as'], ['Ctrl+F / Ctrl+H', 'Find / Replace'], ['F3 / Shift+F3', 'Next / previous match'],
+      ['Ctrl+G', 'Go to line'], ['Ctrl+/', 'Comment or uncomment lines'], ['Tab / Shift+Tab', 'Indent / outdent lines'],
+      ['Ctrl+D', 'Duplicate line'], ['Ctrl+Shift+K', 'Delete line'], ['Alt+Up / Alt+Down', 'Move line up / down'],
+      ['Ctrl+Enter / +Shift', 'New line below / above'], ['Ctrl+U / Ctrl+Shift+U', 'lowercase / UPPERCASE selection'], ['Ctrl + mouse wheel', 'Zoom text']
+    ];
+    AppDialog.alert(body, { title: 'Keyboard shortcuts', message: rows.map(r => r[0].padEnd(24, ' ') + r[1]).join('\n') });
+    const m = Array.from(body.querySelectorAll('.dlg-msg')).pop();
+    if (m) { m.style.whiteSpace = 'pre'; m.style.fontFamily = 'Consolas, "Courier New", monospace'; m.style.overflowX = 'auto'; }
+  }
 
+  /* ---------- events ---------- */
   body.addEventListener('click', e => {
     const b = e.target.closest('[data-a]');
     if (!b) return;
@@ -8066,18 +9309,112 @@ function TextEditorApp(body, ctx) {
     else if (a === 'save') save();
     else if (a === 'saveas') save(true);
     else if (a === 'dl') downloadCopy();
-    else if (a === 'smaller') { prefs.size = Math.max(9, prefs.size - 1); applyPrefs(); }
-    else if (a === 'bigger') { prefs.size = Math.min(32, prefs.size + 1); applyPrefs(); }
-    else if (a === 'wrap') { prefs.wrap = !prefs.wrap; applyPrefs(); }
+    else if (a === 'undo') { ta.focus(); document.execCommand('undo'); }
+    else if (a === 'redo') { ta.focus(); document.execCommand('redo'); }
+    else if (a === 'find') openFind(false);
+    else if (a === 'goto') gotoLine();
+    else if (a === 'keys') showKeys();
+    else if (a === 'smaller') { prefs.size = Math.max(9, prefs.size - 1); applyPrefs(); render(); }
+    else if (a === 'bigger') { prefs.size = Math.min(32, prefs.size + 1); applyPrefs(); render(); }
+    else if (a === 'wrap') { prefs.wrap = !prefs.wrap; applyPrefs(); render(); }
+    else if (a === 'fcase' || a === 'fword' || a === 'fregex') {
+      const k = a === 'fcase' ? 'c' : a === 'fword' ? 'w' : 'r';
+      fo[k] = !fo[k]; b.classList.toggle('on', fo[k]); replMsg = ''; updateFind();
+    }
+    else if (a === 'fprev') findStep(-1);
+    else if (a === 'fnext') findStep(1);
+    else if (a === 'frep') replaceCurrent();
+    else if (a === 'fall') replaceAll();
+    else if (a === 'fclose') closeFind();
   });
-  ta.addEventListener('input', () => { if (!dirty) setDirty(true); statsSoon(); });
-  ['keyup', 'click', 'select'].forEach(ev => ta.addEventListener(ev, statsSoon));
+  langSel.addEventListener('change', () => { lang = langSel.value; langAuto = false; tokCache = null; render(); ta.focus(); });
+  indentSel.addEventListener('change', () => { prefs.indent = indentSel.value; applyPrefs(); render(); ta.focus(); });
+  fInput.addEventListener('input', () => { replMsg = ''; findSoon(); });
+  fInput.addEventListener('keydown', e => {
+    if (e.key === 'Enter') { e.preventDefault(); findStep(e.shiftKey ? -1 : 1); }
+    else if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); closeFind(); }
+    else if (e.key === 'F3') { e.preventDefault(); findStep(e.shiftKey ? -1 : 1); }
+  });
+  rInput.addEventListener('keydown', e => {
+    if (e.key === 'Enter') { e.preventDefault(); replaceCurrent(); }
+    else if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); closeFind(); }
+  });
+
+  ta.addEventListener('input', () => { if (!dirty) setDirty(true); renderSoon(); statsSoon(); selSoon(); if (findOpen) findSoon(); });
+  ta.addEventListener('scroll', syncScroll);
+  ['keyup', 'mouseup', 'click', 'select', 'focus', 'blur'].forEach(ev => ta.addEventListener(ev, selSoon));
+  const onDocSel = () => { if (document.activeElement === ta) selSoon(); };
+  document.addEventListener('selectionchange', onDocSel);
+  ta.addEventListener('wheel', e => {
+    if (!(e.ctrlKey || e.metaKey)) return;
+    e.preventDefault();
+    prefs.size = Math.max(9, Math.min(32, prefs.size + (e.deltaY < 0 ? 1 : -1)));
+    applyPrefs(); render();
+  }, { passive: false });
+  gut.addEventListener('wheel', e => { e.preventDefault(); ta.scrollTop += e.deltaY; syncScroll(); }, { passive: false });
+  gut.addEventListener('mousedown', e => {
+    e.preventDefault();
+    const y = e.clientY - gut.getBoundingClientRect().top + ta.scrollTop, kids = code.children;
+    let lo = 0, hi = kids.length - 1;
+    while (lo < hi) { const mid = (lo + hi + 1) >> 1; if (kids[mid].offsetTop <= y) lo = mid; else hi = mid - 1; }
+    const v = ta.value; let pos = 0;
+    for (let l = 0; l < lo; l++) pos = v.indexOf('\n', pos) + 1;
+    let end = v.indexOf('\n', pos); end = end < 0 ? v.length : end + 1;
+    ta.focus(); ta.setSelectionRange(pos, end); selSoon();
+  });
+
   ta.addEventListener('keydown', e => {
-    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') { e.preventDefault(); save(e.shiftKey); return; }
-    if (e.key === 'Tab' && !e.ctrlKey && !e.altKey && !e.metaKey) {
+    if (e.isComposing) return;
+    const mod = e.ctrlKey || e.metaKey, k = e.key, kl = k.toLowerCase();
+    if (mod && !e.altKey) {
+      let handled = true;
+      if (kl === 's') save(e.shiftKey);
+      else if (kl === 'f') openFind(false);
+      else if (kl === 'h') openFind(true);
+      else if (kl === 'g') gotoLine();
+      else if (kl === 'd' && !e.shiftKey) duplicateLines();
+      else if (kl === 'k' && e.shiftKey) deleteLines();
+      else if (kl === '/' || e.code === 'Slash') toggleComment();
+      else if (kl === 'u') changeCase(e.shiftKey);
+      else if (k === 'Enter') newLine(e.shiftKey);
+      else handled = false;
+      if (handled) { e.preventDefault(); return; }
+      return;
+    }
+    if (e.altKey && !mod && (k === 'ArrowUp' || k === 'ArrowDown')) { e.preventDefault(); moveLines(k === 'ArrowUp' ? -1 : 1); return; }
+    if (k === 'F3') { e.preventDefault(); findStep(e.shiftKey ? -1 : 1); return; }
+    if (mod || e.altKey) return;
+    const v = ta.value, s = ta.selectionStart, en = ta.selectionEnd;
+    if (k === 'Tab') {
       e.preventDefault();
-      ta.setRangeText('\t', ta.selectionStart, ta.selectionEnd, 'end');
-      ta.dispatchEvent(new Event('input'));
+      if (e.shiftKey) outdentBlock();
+      else if (v.slice(s, en).indexOf('\n') >= 0) indentBlock();
+      else if (prefs.indent === 'tab') edit(s, en, '\t');
+      else { const w = unitWidth(), col = s - lineStart(v, s); edit(s, en, ' '.repeat(w - (col % w))); }
+      return;
+    }
+    if (k === 'Enter') { e.preventDefault(); handleEnter(); return; }
+    if (!H.pairsOn(lang)) return;
+    if (k === 'Backspace' && s === en && s > 0) {
+      const a = v[s - 1];
+      if (OPEN[a] && OPEN[a] === v[s]) { e.preventDefault(); edit(s - 1, s + 1, ''); }
+      return;
+    }
+    if (k.length !== 1) return;
+    if (s === en && CLOSERS.has(k) && v[s] === k) { e.preventDefault(); ta.setSelectionRange(s + 1, s + 1); selSoon(); return; }
+    if (k === '>' && isHtmlLike() && s === en && v[s] !== '>') {
+      const m = /<([A-Za-z][\w:.-]*)(?:\s[^<>]*)?$/.exec(v.slice(Math.max(0, s - 300), s));
+      if (m && !/\/\s*$/.test(v.slice(Math.max(0, s - 2), s)) && !(lang === 'html' && VOID.has(m[1].toLowerCase()))) {
+        e.preventDefault(); edit(s, s, '></' + m[1] + '>', s + 1); return;
+      }
+    }
+    if (OPEN[k]) {
+      const close = OPEN[k];
+      if (s !== en) { e.preventDefault(); edit(s, en, k + v.slice(s, en) + close, s + 1, en + 1); return; }
+      const prev = v[s - 1] || '', next = v[s] || '';
+      if (k === close && (/\w/.test(prev) || prev === k)) return;
+      if (/\w/.test(next)) return;
+      e.preventDefault(); edit(s, s, k + close, s + 1);
     }
   });
 
@@ -8098,17 +9435,25 @@ function TextEditorApp(body, ctx) {
     } catch (_) {}
   });
 
+  let ro = null;
+  try { ro = new ResizeObserver(() => { if (disposed) return; syncLayout(); if (prefs.wrap && !plainMode) buildNums(true); }); ro.observe(wrapEl); } catch (_) {}
+
   const api = { open: openFile };
   EditorBridge.instance = api;
   ctx.onClose(() => {
     disposed = true;
-    clearTimeout(statsTimer);
+    clearTimeout(statsTimer); clearTimeout(findTimer);
+    if (selRaf) cancelAnimationFrame(selRaf);
+    if (renderRaf) cancelAnimationFrame(renderRaf);
+    if (ro) ro.disconnect();
     offChange();
+    document.removeEventListener('selectionchange', onDocSel);
     window.removeEventListener('beforeunload', warnUnload);
     if (EditorBridge.instance === api) EditorBridge.instance = null;
   });
 
   applyPrefs();
+  render();
   updateTitle();
   updateStats();
   S.ready().then(() => {
