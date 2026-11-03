@@ -45,3 +45,5 @@ It is undetectable and un-seeable by all monitering systems in browsers, interne
 -You can pin/unpin apps and add/remove apps from desktop.
 
 -You can rename all desktop apps.
+
+-A suggestions box is available in settings.
