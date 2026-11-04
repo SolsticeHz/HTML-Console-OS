@@ -1,7 +1,7 @@
 <!DOCTYPE html><html lang="en" data-theme="dark"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/><title>New Tab</title>
 <script>
-var CONSOLE_OS_VERSION="2026.11.8";
-var CONSOLE_OS_UPDATE_NOTES="Optimized File";
+var CONSOLE_OS_VERSION="2026.11.9";
+var CONSOLE_OS_UPDATE_NOTES="Added multi-select box.";
 var CONSOLE_OS_SUGGESTIONS={googleFormUrl:"",googleEntryMessage:"",formspreeUrl:"https://formspree.io/f/mdeepvqv"};
 var CONSOLE_OS_UPDATE_URL="https://raw.githubusercontent.com/SolsticeHz/HTML-Console-OS/refs/heads/main/Console_OS.html";
 (function(){
@@ -175,6 +175,8 @@ background:rgba(255,255,255,0.1);
 border-color:rgba(255,255,255,0.15);
 }
 .desktop-icon:active{transform:scale(0.96)}
+.desktop-icon.selected{background:rgba(255,255,255,0.16);border-color:var(--accent-color)}
+.desk-marquee{position:absolute;z-index:40;pointer-events:none;border:1px solid var(--accent-color);background:rgba(96,205,255,0.18);background:color-mix(in srgb,var(--accent-color) 22%,transparent);border-radius:2px}
 .desktop-icon.holding{
 background:rgba(255,255,255,0.12);
 animation:holdPulse var(--hold-ms,1200ms) linear forwards;
@@ -1319,7 +1321,7 @@ border-right:1px solid var(--line);color:var(--te-gutter-fg);user-select:none;-w
 </div>
 <div class="win-body">
 <div id="vidContain" aria-label="Video player container">
-<iframe src="https://cleanreel.lovable.app" title="Video Player" id="vid-frame" sandbox="allow-scripts allow-same-origin allow-forms allow-top-navigation-by-user-activation allow-pointer-lock" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen; gamepad" allowfullscreen></iframe>
+<iframe src="https://cleanreel.lovable.app" title="Video Player" id="vid-frame" sandbox="allow-scripts allow-same-origin allow-forms allow-top-navigation-by-user-activation allow-pointer-lock allow-modals allow-downloads" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen; gamepad" allowfullscreen></iframe>
 </div>
 </div>
 </div>
@@ -4506,7 +4508,7 @@ body.innerHTML=`
       </div>`;
 const frame=body.querySelector('.rn-frame');
 frame.title=item.name;
-frame.setAttribute('sandbox','allow-scripts allow-same-origin allow-forms allow-top-navigation-by-user-activation allow-pointer-lock');
+frame.setAttribute('sandbox','allow-scripts allow-same-origin allow-forms allow-top-navigation-by-user-activation allow-pointer-lock allow-modals allow-downloads');
 frame.setAttribute('allow','autoplay; encrypted-media; fullscreen; picture-in-picture; clipboard-write; gamepad; accelerometer; gyroscope');
 frame.src=item.url;
 body.querySelector('[data-a="reload"]').addEventListener('click',()=>{frame.src=item.url;});
@@ -4655,6 +4657,7 @@ const GAP=20,PAD=24;
 const HOLD_MS=1200;
 let layout={positions:{},folders:[],shortcuts:[],names:{},iconSize:'medium'};
 let current={};
+const sel=new Set();
 let deskFiles=[],deskSig='';
 const canNest=it=>it.kind!=='folder'&&it.kind!=='file';
 const isShortcutId=id=>typeof id==='string'&&(id.indexOf('store:')===0||id.indexOf('game:')===0);
@@ -4782,12 +4785,17 @@ placed.push(p);
 });
 return pos;
 }
+const selNode=id=>el.querySelector('.desktop-icon[data-id="'+(window.CSS&&CSS.escape?CSS.escape(id):id)+'"]');
+function paintSel(){el.querySelectorAll('.desktop-icon').forEach(n=>n.classList.toggle('selected',sel.has(n.dataset.id)));}
+function clearSel(){if(sel.size){sel.clear();paintSel();}}
+function toggleSel(id){sel.has(id)?sel.delete(id):sel.add(id);paintSel();}
 function freezeLayout(){
 Object.keys(current).forEach(id=>{layout.positions[id]={x:current[id].x,y:current[id].y};});
 }
 function render(){
 const items=visibleItems();
 current=computeLayout(items);
+[...sel].forEach(id=>{if(!current[id])sel.delete(id);});
 el.innerHTML='';
 items.forEach(it=>{
 const d=document.createElement('div');
@@ -4795,6 +4803,7 @@ d.className='desktop-icon';
 d.dataset.id=it.id;
 d.dataset.kind=it.kind||'app';
 d.title=it.name;
+if(sel.has(it.id))d.classList.add('selected');
 d.style.left=current[it.id].x+'px';
 d.style.top=current[it.id].y+'px';
 d.innerHTML=`<div class="icon-img">${escapeHtml(it.icon)}</div><div class="icon-text">${escapeHtml(it.name)}</div>`;
@@ -4830,7 +4839,7 @@ document.querySelectorAll('.drop-target').forEach(n=>n.classList.remove('drop-ta
 function attach(d,it){
 d.style.setProperty('--hold-ms',HOLD_MS+'ms');
 let timer=null,pid=null,ready=false,dragging=false;
-let sx=0,sy=0,offX=0,offY=0,ptype='mouse',suppressUntil=0;
+let sx=0,sy=0,offX=0,offY=0,ptype='mouse',suppressUntil=0,grp=[];
 const cancelHold=()=>{
 if(timer){clearTimeout(timer);timer=null;}
 d.classList.remove('holding');
@@ -4864,6 +4873,8 @@ return;
 if(!dragging){
 el.classList.add('icon-dragging');
 d.style.zIndex=String(WindowManager.topZ()+1);
+if(sel.has(it.id)){grp=[...sel].filter(i=>i!==it.id&&current[i]).map(i=>({id:i,n:selNode(i)})).filter(g=>g.n);grp.forEach(g=>{g.n.classList.add('dragging');g.n.style.zIndex=d.style.zIndex;});}
+else clearSel();
 }
 dragging=true;
 const dr=el.getBoundingClientRect();
@@ -4871,6 +4882,14 @@ let x=e.clientX-dr.left-offX;
 let y=e.clientY-dr.top-offY;
 x=Math.max(0,Math.min(x,el.clientWidth-ICON_W));
 y=Math.max(0,Math.min(y,el.clientHeight-ICON_H));
+if(grp.length){
+const all=[it.id,...grp.map(g=>g.id)];
+let dx=x-current[it.id].x,dy=y-current[it.id].y;
+dx=Math.max(Math.max(...all.map(i=>-current[i].x)),Math.min(dx,Math.min(...all.map(i=>el.clientWidth-ICON_W-current[i].x))));
+dy=Math.max(Math.max(...all.map(i=>-current[i].y)),Math.min(dy,Math.min(...all.map(i=>el.clientHeight-ICON_H-current[i].y))));
+x=current[it.id].x+dx;y=current[it.id].y+dy;
+grp.forEach(g=>{g.n.style.left=current[g.id].x+dx+'px';g.n.style.top=current[g.id].y+dy+'px';});
+}
 d.classList.remove('drag-ready');
 d.classList.add('dragging');
 d.style.left=x+'px';
@@ -4885,6 +4904,8 @@ const end=e=>{
 if(e.pointerId!==pid)return;
 cancelHold();
 const wasDragging=dragging,wasReady=ready;
+const g=grp;grp=[];
+g.forEach(o=>{o.n.classList.remove('dragging');o.n.style.zIndex='';});
 d.classList.remove('drag-ready','dragging');
 el.classList.remove('icon-dragging');
 d.style.zIndex='';
@@ -4893,7 +4914,7 @@ try{d.releasePointerCapture(pid);}catch(_){}
 pid=null;ready=false;dragging=false;
 if(wasDragging){
 suppressUntil=performance.now()+400;
-finishDrag(d,it,e.clientX,e.clientY,e.type==='pointercancel');
+finishDrag(d,it,e.clientX,e.clientY,e.type==='pointercancel',g);
 }else if(wasReady){
 suppressUntil=performance.now()+400;
 if(e.type==='pointerup'&&e.pointerType==='touch'){
@@ -4905,9 +4926,11 @@ showItemMenu(e.clientX,e.clientY,it,{removable:true,rename:true});
 d.addEventListener('pointerup',end);
 d.addEventListener('pointercancel',end);
 d.addEventListener('click',e=>{
-if(e.button!==0||e.ctrlKey)return;
+if(e.button!==0)return;
 if(d.classList.contains('renaming'))return;
 if(performance.now()<suppressUntil||recentlyContext())return;
+if(e.ctrlKey||e.shiftKey||e.metaKey){toggleSel(it.id);return;}
+clearSel();
 launchItem(it);
 });
 d.addEventListener('contextmenu',e=>{
@@ -4918,21 +4941,31 @@ if(ptype==='touch')return;
 showItemMenu(e.clientX,e.clientY,it,{removable:true,rename:true});
 });
 }
-function finishDrag(d,it,cx,cy,cancelled){
+function finishDrag(d,it,cx,cy,cancelled,grp){
+grp=grp||[];
 if(!cancelled&&canNest(it)){
 const t=dropTarget(cx,cy,it.id);
-if(t){moveToFolder(it.id,t.folderId);return;}
+if(t&&!grp.some(g=>g.id===t.folderId)){
+const mv=[it,...grp.map(g=>findItem(g.id))].filter(o=>o&&canNest(o));
+grp.forEach(g=>{if(!mv.some(o=>o.id===g.id))current[g.id]={x:parseFloat(g.n.style.left)||0,y:parseFloat(g.n.style.top)||0};});
+mv.forEach(o=>sel.delete(o.id));
+mv.forEach(o=>moveToFolder(o.id,t.folderId));
+return;
 }
-let x=parseFloat(d.style.left)||0;
-let y=parseFloat(d.style.top)||0;
-const others=Object.keys(current).filter(id=>id!==it.id).map(id=>current[id]);
-if(overlapsAny({x,y},others)){
-const spot=nearestFree({x,y},others);
-if(spot){x=spot.x;y=spot.y;d.style.left=x+'px';d.style.top=y+'px';}
 }
+const mvg=[{id:it.id,n:d},...grp];
+const others=Object.keys(current).filter(id=>!mvg.some(m=>m.id===id)).map(id=>current[id]);
 freezeLayout();
-layout.positions[it.id]={x,y};
-current[it.id]={x,y};
+mvg.forEach(m=>{
+let p={x:parseFloat(m.n.style.left)||0,y:parseFloat(m.n.style.top)||0};
+if(overlapsAny(p,others)){
+const spot=nearestFree(p,others);
+if(spot){p=spot;m.n.style.left=p.x+'px';m.n.style.top=p.y+'px';}
+}
+others.push(p);
+layout.positions[m.id]=p;
+current[m.id]=p;
+});
 save();
 }
 function nextFolderName(){
@@ -5256,6 +5289,44 @@ FileStore.onChange(()=>refreshDeskFiles());
 refreshDeskFiles();
 let t=null;
 window.addEventListener('resize',()=>{clearTimeout(t);t=setTimeout(render,150);});
+el.addEventListener('pointerdown',e=>{
+if(e.target!==el||e.button!==0||e.pointerType!=='mouse')return;
+const add=e.ctrlKey||e.shiftKey||e.metaKey,base=add?[...sel]:[],r0=el.getBoundingClientRect(),sx=e.clientX,sy=e.clientY,pid=e.pointerId;
+let box=null;
+if(!add)clearSel();
+try{el.setPointerCapture(pid);}catch(_){}
+const mv=ev=>{
+if(ev.pointerId!==pid)return;
+const cx=Math.max(r0.left,Math.min(ev.clientX,r0.right)),cy=Math.max(r0.top,Math.min(ev.clientY,r0.bottom));
+if(!box){
+if(Math.hypot(ev.clientX-sx,ev.clientY-sy)<4)return;
+box=document.createElement('div');
+box.className='desk-marquee';
+el.appendChild(box);
+}
+const l=Math.min(sx,cx),tp=Math.min(sy,cy),r=Math.max(sx,cx),b=Math.max(sy,cy);
+box.style.left=l-r0.left+'px';box.style.top=tp-r0.top+'px';box.style.width=r-l+'px';box.style.height=b-tp+'px';
+sel.clear();
+base.forEach(id=>sel.add(id));
+el.querySelectorAll('.desktop-icon').forEach(n=>{
+const q=n.getBoundingClientRect();
+if(q.left<r&&q.right>l&&q.top<b&&q.bottom>tp)sel.add(n.dataset.id);
+});
+paintSel();
+};
+const up=ev=>{
+if(ev.pointerId!==pid)return;
+el.removeEventListener('pointermove',mv);
+el.removeEventListener('pointerup',up);
+el.removeEventListener('pointercancel',up);
+if(box)box.remove();
+try{el.releasePointerCapture(pid);}catch(_){}
+};
+el.addEventListener('pointermove',mv);
+el.addEventListener('pointerup',up);
+el.addEventListener('pointercancel',up);
+});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&sel.size&&!e.target.closest('input,textarea'))clearSel();});
 }
 return{
 init,render,refresh,showMenu,createFolder,sortIcons,resetLayout,
@@ -5564,7 +5635,7 @@ iframe._z=9999999-i;
 iframe.className=this._randomAttr(16);
 iframe.style.cssText=this._frameCss(iframe._z);
 iframe.setAttribute(this._randomAttr(10),"true");
-iframe.setAttribute("sandbox","allow-scripts allow-same-origin allow-forms allow-top-navigation-by-user-activation allow-pointer-lock");
+iframe.setAttribute("sandbox","allow-scripts allow-same-origin allow-forms allow-top-navigation-by-user-activation allow-pointer-lock allow-modals allow-downloads");
 iframe.setAttribute("allow","autoplay; encrypted-media; fullscreen; picture-in-picture; clipboard-write; gamepad; accelerometer; gyroscope");
 iframe.setAttribute("allowfullscreen","");
 iframe.src=url;
