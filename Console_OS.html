@@ -1589,11 +1589,15 @@ let transport="Connecting...";
 let renderTimer=null;
 let retryTimer=null;
 const pending=[];
+let storedRaw=null,storedArr=[];
 function getStoredMessages(){
 try{
 const data=localStorage.getItem(STORAGE_KEY);
+if(data===storedRaw&&storedRaw!==null)return storedArr.slice();
 const arr=data?JSON.parse(data):[];
-return Array.isArray(arr)?arr:[];
+storedArr=Array.isArray(arr)?arr:[];
+storedRaw=data;
+return storedArr.slice();
 }catch(e){
 return[];
 }
@@ -1627,7 +1631,7 @@ if(msgObj.timestamp<=getClearedAt())return false;
 const msgs=getStoredMessages();
 if(msgs.some(m=>m.id===msgObj.id))return false;
 msgs.push(msgObj);
-msgs.sort((a,b)=>(a.timestamp||0)-(b.timestamp||0));
+msgs.sort((a,b)=>(a.rx||a.timestamp||0)-(b.rx||b.timestamp||0));
 while(msgs.length>MAX_MSGS)msgs.shift();
 writeMessages(msgs);
 return true;
@@ -1643,7 +1647,7 @@ if(msgs.length===0){
 area.innerHTML='<div style="text-align: center; color: var(--text-muted); font-size: 12px; margin-top: 20px;">Welcome to Global Community Chat! 👋<br>Messages are shared live with everyone using this page on any device.</div>';
 return;
 }
-area.innerHTML='';
+const frag=document.createDocumentFragment();
 msgs.forEach(m=>{
 const isSelf=m.userId===userId;
 const msgEl=document.createElement('div');
@@ -1659,8 +1663,9 @@ msgEl.innerHTML=`
         </div>
         <div>${escapeHtml(shownText)}</div>
       `;
-area.appendChild(msgEl);
+frag.appendChild(msgEl);
 });
+area.replaceChildren(frag);
 area.scrollTop=area.scrollHeight;
 }
 function updateStatus(text,isOnline=true){
@@ -1755,13 +1760,14 @@ function renderSoon(){
 if(renderTimer)return;
 renderTimer=setTimeout(()=>{renderTimer=null;renderMessages();},60);
 }
-function handleRelayEvent(bytes){
+function handleRelayEvent(bytes,retained){
 if(!bytes||!bytes.length)return;
 let data;
 try{data=JSON.parse(new TextDecoder().decode(bytes));}catch(e){return;}
 if(!data||typeof data!=="object")return;
 if(data.type==="win11_chat_msg"){
 const msg=sanitize(data.payload);
+if(msg){const now=Date.now();msg.rx=retained?Math.min(msg.timestamp,now):now;}
 if(saveMessage(msg)){renderSoon();notifyIncoming(msg);}
 }else if(data.type==="win11_chat_presence"){
 onPresence(data);
@@ -1798,7 +1804,7 @@ sendPresence({hello:true});
 },
 onmessage:(topic,bytes,retained)=>{
 if(retained&&topic===TOPIC_ROOT+"/presence")return;
-handleRelayEvent(bytes);
+handleRelayEvent(bytes,retained);
 },
 onclose:()=>{
 l.client=null;
@@ -1819,7 +1825,9 @@ SYNC_BROADCAST.onmessage=(event)=>{
 const d=event.data;
 if(!d)return;
 if(d.type==="chat_msg"){
-if(saveMessage(sanitize(d.payload)))renderMessages();
+const bm=sanitize(d.payload);
+if(bm){const r=Number(d.payload&&d.payload.rx);bm.rx=isFinite(r)&&r>0?r:Date.now();}
+if(saveMessage(bm))renderMessages();
 }else if(d.type==="chat_clear"){
 applyClear(Number(d.ts)||Date.now());
 }
@@ -1839,10 +1847,12 @@ text:ProfanityFilter.clean(text.slice(0,MAX_TEXT)),
 time:new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}),
 timestamp:Date.now()
 };
+const wire=Object.assign({},msgObj);
+msgObj.rx=Date.now();
 saveMessage(msgObj);
 renderMessages();
 try{SYNC_BROADCAST.postMessage({type:"chat_msg",payload:msgObj});}catch(e){}
-publish({type:"win11_chat_msg",payload:msgObj});
+publish({type:"win11_chat_msg",payload:wire});
 }
 function applyClear(ts){
 ts=Math.max(ts,getClearedAt());
